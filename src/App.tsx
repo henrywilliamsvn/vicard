@@ -8,6 +8,7 @@ import {
 } from "./cards";
 import AccountBar from "./components/AccountBar";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
+import { sourcesFor } from "./rewardSources";
 
 interface OwnedCard {
   id: string;
@@ -332,9 +333,22 @@ export default function App() {
                 const rec = bestCardFor(logCat, ownedStates);
                 if (!rec) return null;
                 return (
-                  <div className="text-sm text-slate-600 bg-brand-light rounded-lg px-3 py-2">
-                    Use <strong>{rec.card.product}</strong> → {Math.round(rec.rule.rate * 100)}% = <strong>{formatVND(logAmount * rec.rule.rate)}</strong> back
-                  </div>
+                  <>
+                    <div className="text-sm text-slate-600 bg-brand-light rounded-lg px-3 py-2">
+                      Use <strong>{rec.card.product}</strong> → {Math.round(rec.rule.rate * 100)}% = <strong>{formatVND(logAmount * rec.rule.rate)}</strong> back
+                    </div>
+                    {sourcesFor(logCat).length > 0 && (
+                      <div className="text-xs text-slate-500 mt-1.5">
+                        Also stack:{" "}
+                        {sourcesFor(logCat).map((src, i) => (
+                          <span key={src.name}>
+                            {i > 0 ? ", " : ""}
+                            <a href={src.url} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline" title={src.note}>{src.name}</a>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 );
               })()}
               <button onClick={logPurchase} disabled={logAmount <= 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">Log purchase</button>
@@ -378,6 +392,25 @@ export default function App() {
                 </div>
                 <div className="text-3xl font-bold text-brand">{Math.round(recommendation.rule.rate * 100)}%</div>
               </div>
+              {sourcesFor(category).length > 0 && (
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <div className="text-xs font-medium text-slate-500 mb-1.5">Stack more cashback before you pay</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {sourcesFor(category).map((src) => (
+                      <a
+                        key={src.name}
+                        href={src.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={src.note}
+                        className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100"
+                      >
+                        {src.name} ↗
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-slate-500">No recommendation.</div>
