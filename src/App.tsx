@@ -182,12 +182,24 @@ export default function App() {
     setOwned((prev) => prev.filter((o) => o.id !== id));
   }
 
-  const [pickId, setPickId] = useState<string>(CARDS[0].id);
-  const [statementDay, setStatementDay] = useState(1);
-  const [dueDay, setDueDay] = useState(15);
-  function addCard() {
-    if (owned.some((o) => o.id === pickId)) return;
-    setOwned((prev) => [...prev, { id: pickId, statementDay, dueDay }]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+  function addSelected() {
+    setOwned((prev) => {
+      const toAdd = selectedIds
+        .filter((id) => !prev.some((o) => o.id === id))
+        .map((id) => ({ id, statementDay: 1, dueDay: 15 }));
+      return [...prev, ...toAdd];
+    });
+    setSelectedIds([]);
+  }
+  function updateCardDay(id: string, field: "statementDay" | "dueDay", value: number) {
+    const v = Math.min(28, Math.max(1, value || 1));
+    setOwned((prev) => prev.map((o) => (o.id === id ? { ...o, [field]: v } : o)));
   }
   const availableToAdd = CARDS.filter((c) => !owned.some((o) => o.id === c.id));
 
@@ -408,6 +420,16 @@ export default function App() {
                       </div>
                     </div>
                   )}
+                  <div className="flex items-center gap-3 mt-3 text-xs text-slate-500">
+                    <label className="flex items-center gap-1">
+                      Statement day
+                      <input type="number" min={1} max={28} value={o.statementDay} onChange={(e) => updateCardDay(o.id, "statementDay", +e.target.value)} className="w-14 border border-slate-200 rounded px-2 py-1" />
+                    </label>
+                    <label className="flex items-center gap-1">
+                      Due day
+                      <input type="number" min={1} max={28} value={o.dueDay} onChange={(e) => updateCardDay(o.id, "dueDay", +e.target.value)} className="w-14 border border-slate-200 rounded px-2 py-1" />
+                    </label>
+                  </div>
                 </div>
               );
             })}
@@ -418,26 +440,30 @@ export default function App() {
         <section>
           <h2 className="text-lg font-semibold mb-3">Add a card</h2>
           <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
-            <label className="block text-sm">
-              <span className="text-slate-600">Card</span>
-              <select value={pickId} onChange={(e) => setPickId(e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2">
-                {availableToAdd.map((c) => (
-                  <option key={c.id} value={c.id}>{c.bank} — {c.product}</option>
-                ))}
-              </select>
-            </label>
-            <div className="flex gap-3">
-              <label className="block text-sm flex-1">
-                <span className="text-slate-600">Statement day</span>
-                <input type="number" min={1} max={28} value={statementDay} onChange={(e) => setStatementDay(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-              </label>
-              <label className="block text-sm flex-1">
-                <span className="text-slate-600">Payment due day</span>
-                <input type="number" min={1} max={28} value={dueDay} onChange={(e) => setDueDay(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-              </label>
+            <p className="text-sm text-slate-600">Tick every card you own — add them all at once.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {availableToAdd.map((c) => {
+                const checked = selectedIds.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleSelect(c.id)}
+                    className={"flex items-center gap-2 text-left text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}
+                  >
+                    <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
+                    <span>
+                      <span className="font-medium text-slate-700">{c.product}</span>
+                      <span className="block text-xs text-slate-400">{c.bank}</span>
+                    </span>
+                  </button>
+                );
+              })}
+              {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">All catalog cards added.</p>}
             </div>
-            <button onClick={addCard} disabled={availableToAdd.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">Add to wallet</button>
-            <p className="text-xs text-slate-400">Privacy-first: no bank login, no account numbers. Everything stays on this device.</p>
+            <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
+              {selectedIds.length === 0 ? "Select cards to add" : "Add " + selectedIds.length + " card" + (selectedIds.length === 1 ? "" : "s") + " to wallet"}
+            </button>
+            <p className="text-xs text-slate-400">New cards start with statement day 1 and due day 15 — adjust each card's dates in your wallet above. Privacy-first: no bank login; everything stays on this device.</p>
           </div>
         </section>
 
