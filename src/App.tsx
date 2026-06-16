@@ -6,11 +6,14 @@ import {
   type OwnedCardState,
   type SpendCategory,
 } from "./cards";
+import AccountBar from "./components/AccountBar";
+import { useCloudSync, type AppData } from "./lib/useCloudSync";
 
 interface OwnedCard {
   id: string;
   statementDay: number;
   dueDay: number;
+  customCapVND?: number;
 }
 
 interface Purchase {
@@ -112,8 +115,13 @@ export default function App() {
       .reduce((sum, p) => sum + p.cashbackVND, 0);
   }
 
+  function effectiveCap(o: OwnedCard): number | null {
+    if (o.customCapVND != null) return o.customCapVND;
+    return catalogById(o.id)?.totalCapVND ?? null;
+  }
+
   const ownedStates: OwnedCardState[] = useMemo(
-    () => owned.map((o) => ({ id: o.id, usedThisPeriodVND: usedForCard(o.id) })),
+    () => owned.map((o) => ({ id: o.id, usedThisPeriodVND: usedForCard(o.id), capVND: effectiveCap(o) })),
     [owned, log]
   );
 
@@ -133,9 +141,9 @@ export default function App() {
     }
     let capRemaining = 0;
     for (const o of owned) {
-      const card = catalogById(o.id);
-      if (card?.totalCapVND != null) {
-        capRemaining += Math.max(0, card.totalCapVND - usedForCard(o.id));
+      const ec = effectiveCap(o);
+      if (ec != null) {
+        capRemaining += Math.max(0, ec - usedForCard(o.id));
       }
     }
     return { totalCashback, bestCardId, capRemaining };
@@ -201,6 +209,17 @@ export default function App() {
     const v = Math.min(28, Math.max(1, value || 1));
     setOwned((prev) => prev.map((o) => (o.id === id ? { ...o, [field]: v } : o)));
   }
+  function updateCardCap(id: string, value: number) {
+    setOwned((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, customCapVND: value > 0 ? value : undefined } : o))
+    );
+  }
+  function applyCloud(d: AppData) {
+    if (Array.isArray(d.owned)) setOwned(d.owned as OwnedCard[]);
+    if (Array.isArray(d.log)) setLog(d.log as Purchase[]);
+    if (d.paid && typeof d.paid === "object") setPaid(d.paid as Record<string, string>);
+  }
+  useCloudSync({ owned, log, paid }, applyCloud);
   const availableToAdd = CARDS.filter((c) => !owned.some((o) => o.id === c.id));
 
   const [logCat, setLogCat] = useState<SpendCategory>("dining");
@@ -240,9 +259,12 @@ export default function App() {
             <h1 className="text-2xl font-bold">Ví Thẻ</h1>
             <p className="text-brand-light/90 text-sm">Which card to swipe, and when to pay.</p>
           </div>
-          <button onClick={enableReminders} className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5">
-            {notifyOn ? "Reminders on" : "Enable reminders"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={enableReminders} className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5">
+              {notifyOn ? "Reminders on" : "Enable reminders"}
+            </button>
+            <AccountBar />
+          </div>
         </div>
       </header>
 
@@ -372,7 +394,7 @@ export default function App() {
               const isPaid = paid[o.id] === due.toISOString();
               const days = daysUntil(due);
               const tone = dueTone(days);
-              const cap = card.totalCapVND ?? null;
+              const cap = effectiveCap(o);
               const used = usedForCard(o.id);
               const usedPct = cap ? Math.min(100, (used / cap) * 100) : 0;
               return (
@@ -428,6 +450,10 @@ export default function App() {
                     <label className="flex items-center gap-1">
                       Due day
                       <input type="number" min={1} max={28} value={o.dueDay} onChange={(e) => updateCardDay(o.id, "dueDay", +e.target.value)} className="w-14 border border-slate-200 rounded px-2 py-1" />
+                    </label>
+                    <label className="flex items-center gap-1">
+                      Max cashback
+                      <input type="number" min={0} step={50000} value={o.customCapVND ?? ""} placeholder={cap ? String(cap) : "none"} onChange={(e) => updateCardCap(o.id, +e.target.value)} className="w-24 border border-slate-200 rounded px-2 py-1" />
                     </label>
                   </div>
                 </div>

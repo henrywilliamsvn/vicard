@@ -254,6 +254,7 @@ export const CARDS: CardProduct[] = [
 export interface OwnedCardState {
   id: string;
   usedThisPeriodVND: number;   // cashback already earned this statement period
+  capVND?: number | null;      // optional user override of the card's cashback cap
 }
 
 export function bestCardFor(
@@ -273,7 +274,8 @@ export function bestCardFor(
     if (!rule) continue;
 
     // skip if the overall card cap for the period is already exhausted
-    if (card.totalCapVND != null && o.usedThisPeriodVND >= card.totalCapVND) continue;
+    const cap = o.capVND !== undefined ? o.capVND : card.totalCapVND;
+    if (cap != null && o.usedThisPeriodVND >= cap) continue;
 
     if (best === null || rule.rate > best.rule.rate) {
       best = { card, rule };
