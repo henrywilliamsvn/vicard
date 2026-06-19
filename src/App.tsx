@@ -12,6 +12,7 @@ import Wishlist from "./components/Wishlist";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasAnyAffiliate } from "./links";
+import { useLang, t, catLabel } from "./i18n";
 
 interface OwnedCard {
   id: string;
@@ -29,16 +30,16 @@ interface Purchase {
   cashbackVND: number;
 }
 
-const CATEGORIES: { key: SpendCategory; label: string; emoji: string }[] = [
-  { key: "dining", emoji: "🍜", label: "Dining" },
-  { key: "supermarket", emoji: "🛒", label: "Supermarket" },
-  { key: "online", emoji: "💻", label: "Online" },
-  { key: "foreign", emoji: "✈️", label: "Foreign" },
-  { key: "travel", emoji: "🚗", label: "Travel" },
-  { key: "education", emoji: "🎓", label: "Education" },
-  { key: "entertainment", emoji: "🎬", label: "Entertainment" },
-  { key: "insurance", emoji: "🛡️", label: "Insurance" },
-  { key: "everything", emoji: "💳", label: "Everything else" },
+const CATEGORIES: { key: SpendCategory; emoji: string }[] = [
+  { key: "dining", emoji: "🍜" },
+  { key: "supermarket", emoji: "🛒" },
+  { key: "online", emoji: "💻" },
+  { key: "foreign", emoji: "✈️" },
+  { key: "travel", emoji: "🚗" },
+  { key: "education", emoji: "🎓" },
+  { key: "entertainment", emoji: "🎬" },
+  { key: "insurance", emoji: "🛡️" },
+  { key: "everything", emoji: "💳" },
 ];
 
 const REMINDER_LEAD_DAYS = 3;
@@ -62,10 +63,10 @@ function midnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 function nextDue(dueDay: number): Date {
-  const t = new Date();
-  let due = new Date(t.getFullYear(), t.getMonth(), dueDay);
-  if (due.getTime() < midnight(t).getTime()) {
-    due = new Date(t.getFullYear(), t.getMonth() + 1, dueDay);
+  const t2 = new Date();
+  let due = new Date(t2.getFullYear(), t2.getMonth(), dueDay);
+  if (due.getTime() < midnight(t2).getTime()) {
+    due = new Date(t2.getFullYear(), t2.getMonth() + 1, dueDay);
   }
   return due;
 }
@@ -73,17 +74,12 @@ function daysUntil(date: Date): number {
   return Math.round((midnight(date).getTime() - midnight(new Date()).getTime()) / 86400000);
 }
 function periodStart(statementDay: number): Date {
-  const t = new Date();
-  let start = new Date(t.getFullYear(), t.getMonth(), statementDay);
-  if (start.getTime() > midnight(t).getTime()) {
-    start = new Date(t.getFullYear(), t.getMonth() - 1, statementDay);
+  const t2 = new Date();
+  let start = new Date(t2.getFullYear(), t2.getMonth(), statementDay);
+  if (start.getTime() > midnight(t2).getTime()) {
+    start = new Date(t2.getFullYear(), t2.getMonth() - 1, statementDay);
   }
   return start;
-}
-function dueTone(days: number): { dot: string; text: string; label: string } {
-  if (days <= 3) return { dot: "bg-red-500", text: "text-red-600", label: "Pay now" };
-  if (days <= 7) return { dot: "bg-amber-500", text: "text-amber-600", label: "Due soon" };
-  return { dot: "bg-emerald-500", text: "text-emerald-600", label: "On track" };
 }
 function catalogById(id: string): CardProduct | undefined {
   return CARDS.find((c) => c.id === id);
@@ -93,18 +89,16 @@ function fmtVerified(iso: string): string {
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
-function bestForTags(card: CardProduct): string[] {
+function bestForTags(card: CardProduct, lang: "vi" | "en"): string[] {
   return card.rewards
     .filter((r) => r.category !== "everything")
     .sort((a, b) => b.rate - a.rate)
     .slice(0, 3)
-    .map((r) => {
-      const c = CATEGORIES.find((x) => x.key === r.category);
-      return (c?.label ?? r.category) + " " + Math.round(r.rate * 100) + "%";
-    });
+    .map((r) => catLabel(lang, r.category) + " " + Math.round(r.rate * 100) + "%");
 }
 
 export default function App() {
+  const [lang, setLang] = useLang();
   const [owned, setOwned] = useState<OwnedCard[]>(() => load(KEY_OWNED, []));
   const [log, setLog] = useState<Purchase[]>(() => load(KEY_LOG, []));
   const [paid, setPaid] = useState<Record<string, string>>(() => load(KEY_PAID, {}));
@@ -136,6 +130,7 @@ export default function App() {
 
   const [tab, setTab] = useState<"wallet" | "rewards" | "wishlist">("wallet");
   const [category, setCategory] = useState<SpendCategory>("dining");
+  const [recAmount, setRecAmount] = useState<number>(0);
   const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
@@ -266,17 +261,28 @@ export default function App() {
   }
   const recentLog = log.slice(0, 6);
 
+  const langBtn = (
+    <button
+      onClick={() => setLang(lang === "vi" ? "en" : "vi")}
+      className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
+      aria-label="Toggle language"
+    >
+      {lang === "vi" ? "EN" : "VN"}
+    </button>
+  );
+
   return (
     <div className="min-h-screen">
       <header className="bg-brand text-white">
         <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Ví Thẻ</h1>
-            <p className="text-brand-light/90 text-sm">Which card to swipe, and when to pay.</p>
+            <p className="text-brand-light/90 text-sm">{t(lang, "tagline")}</p>
           </div>
           <div className="flex items-center gap-2">
+            {langBtn}
             <button onClick={enableReminders} className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5">
-              {notifyOn ? "Reminders on" : "Enable reminders"}
+              {notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
             </button>
             <AccountBar />
           </div>
@@ -285,50 +291,32 @@ export default function App() {
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
         <div className="flex gap-1 bg-slate-100 rounded-full p-1">
-          <button
-            onClick={() => setTab("wallet")}
-            className={
-              "flex-1 text-sm font-medium rounded-full py-2 transition " +
-              (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")
-            }
-          >
-            Wallet
+          <button onClick={() => setTab("wallet")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
+            {t(lang, "tabWallet")}
           </button>
-          <button
-            onClick={() => setTab("rewards")}
-            className={
-              "flex-1 text-sm font-medium rounded-full py-2 transition " +
-              (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")
-            }
-          >
-            Max rewards
+          <button onClick={() => setTab("rewards")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
+            {t(lang, "tabRewards")}
           </button>
-          <button
-            onClick={() => setTab("wishlist")}
-            className={
-              "flex-1 text-sm font-medium rounded-full py-2 transition " +
-              (tab === "wishlist" ? "bg-white text-brand shadow-sm" : "text-slate-500")
-            }
-          >
-            Wishlist
+          <button onClick={() => setTab("wishlist")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wishlist" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
+            {t(lang, "tabWishlist")}
           </button>
         </div>
       </div>
 
       {tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <RewardsHub bestCardLabel={bestCardLabel} />
+          <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
         </main>
       ) : tab === "wishlist" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <Wishlist notifyOn={notifyOn} />
+          <Wishlist notifyOn={notifyOn} lang={lang} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">
         {dueSoon.length > 0 && (
           <div className="rounded-xl bg-red-50 border border-red-200 p-4">
             <div className="font-semibold text-red-700 text-sm mb-1">
-              {dueSoon.length} payment(s) due soon
+              {t(lang, "paymentsDue", { n: dueSoon.length })}
             </div>
             <ul className="text-sm text-red-700 space-y-0.5">
               {dueSoon.map((x) => {
@@ -336,7 +324,7 @@ export default function App() {
                 return (
                   <li key={x.o.id} className="flex justify-between">
                     <span>{card?.product}</span>
-                    <span>due in {x.days} day(s)</span>
+                    <span>{t(lang, "dueInDays", { n: x.days })}</span>
                   </li>
                 );
               })}
@@ -346,20 +334,20 @@ export default function App() {
 
         {owned.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold mb-3">This month</h2>
+            <h2 className="text-lg font-semibold mb-3">{t(lang, "thisMonth")}</h2>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-4">
-                <div className="text-xs text-slate-400">Cashback earned</div>
+                <div className="text-xs text-slate-400">{t(lang, "cashbackEarned")}</div>
                 <div className="text-xl font-bold text-brand mt-1">{formatVND(summary.totalCashback)}</div>
               </div>
               <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-4">
-                <div className="text-xs text-slate-400">Top card</div>
+                <div className="text-xs text-slate-400">{t(lang, "topCard")}</div>
                 <div className="text-sm font-semibold text-slate-700 mt-1 leading-tight">
                   {summary.bestCardId ? catalogById(summary.bestCardId)?.product : "-"}
                 </div>
               </div>
               <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-4">
-                <div className="text-xs text-slate-400">Cap left</div>
+                <div className="text-xs text-slate-400">{t(lang, "capLeft")}</div>
                 <div className="text-xl font-bold text-slate-700 mt-1">{formatVND(summary.capRemaining)}</div>
               </div>
             </div>
@@ -368,19 +356,19 @@ export default function App() {
 
         {owned.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold mb-3">Log a purchase</h2>
+            <h2 className="text-lg font-semibold mb-3">{t(lang, "logPurchase")}</h2>
             <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
               <div className="flex gap-3">
                 <label className="block text-sm flex-1">
-                  <span className="text-slate-600">Category</span>
+                  <span className="text-slate-600">{t(lang, "category")}</span>
                   <select value={logCat} onChange={(e) => setLogCat(e.target.value as SpendCategory)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2">
                     {CATEGORIES.map((c) => (
-                      <option key={c.key} value={c.key}>{c.emoji} {c.label}</option>
+                      <option key={c.key} value={c.key}>{c.emoji} {catLabel(lang, c.key)}</option>
                     ))}
                   </select>
                 </label>
                 <label className="block text-sm flex-1">
-                  <span className="text-slate-600">Amount</span>
+                  <span className="text-slate-600">{t(lang, "amount")}</span>
                   <input type="number" min={0} step={10000} value={logAmount || ""} onChange={(e) => setLogAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
                 </label>
               </div>
@@ -390,11 +378,11 @@ export default function App() {
                 return (
                   <>
                     <div className="text-sm text-slate-600 bg-brand-light rounded-lg px-3 py-2">
-                      Use <strong>{rec.card.product}</strong> → {Math.round(rec.rule.rate * 100)}% = <strong>{formatVND(logAmount * rec.rule.rate)}</strong> back
+                      {t(lang, "use")} <strong>{rec.card.product}</strong> → {Math.round(rec.rule.rate * 100)}% = <strong>{formatVND(logAmount * rec.rule.rate)}</strong> {t(lang, "back")}
                     </div>
                     {sourcesFor(logCat).length > 0 && (
                       <div className="text-xs text-slate-500 mt-1.5">
-                        Also stack:{" "}
+                        {t(lang, "alsoStack")}{" "}
                         {sourcesFor(logCat).map((src, i) => (
                           <span key={src.name}>
                             {i > 0 ? ", " : ""}
@@ -406,7 +394,7 @@ export default function App() {
                   </>
                 );
               })()}
-              <button onClick={logPurchase} disabled={logAmount <= 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">Log purchase</button>
+              <button onClick={logPurchase} disabled={logAmount <= 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">{t(lang, "logPurchaseBtn")}</button>
             </div>
             {recentLog.length > 0 && (
               <div className="mt-3 space-y-2">
@@ -427,40 +415,68 @@ export default function App() {
         )}
 
         <section>
-          <h2 className="text-lg font-semibold mb-3">Which card should I use?</h2>
+          <h2 className="text-lg font-semibold mb-3">{t(lang, "whichCard")}</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             {CATEGORIES.map((c) => (
               <button key={c.key} onClick={() => setCategory(c.key)} className={"px-3 py-1.5 rounded-full text-sm border transition " + (category === c.key ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand")}>
-                {c.label}
+                {catLabel(lang, c.key)}
               </button>
             ))}
           </div>
           {owned.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-slate-500">Add a card below to get a recommendation.</div>
-          ) : recommendation ? (
+            <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-slate-500">{t(lang, "addToGetRec")}</div>
+          ) : recommendation ? (() => {
+            const recCard = recommendation.card;
+            const os = ownedStates.find((s) => s.id === recCard.id);
+            const cap = os?.capVND != null ? os.capVND : recCard.totalCapVND ?? null;
+            const used = os?.usedThisPeriodVND ?? 0;
+            const remaining = cap != null ? Math.max(0, cap - used) : null;
+            const est = recAmount > 0 ? recAmount * recommendation.rule.rate : 0;
+            const estShown = remaining != null ? Math.min(est, remaining) : est;
+            const needsRegister = /regist/i.test(recommendation.rule.note ?? "") || /regist/i.test(recCard.notes ?? "");
+            const nearCap = remaining != null && cap != null && remaining > 0 && remaining <= cap * 0.2;
+            const exceeded = remaining != null && recAmount > 0 && est > remaining;
+            return (
             <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-5">
-              <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Best card for {CATEGORIES.find((c) => c.key === category)?.label}</div>
+              <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">{t(lang, "bestCardFor", { cat: catLabel(lang, category) })}</div>
               <div className="flex items-baseline justify-between">
                 <div>
-                  <div className="font-semibold text-slate-800">{recommendation.card.product}</div>
-                  <div className="text-sm text-slate-500">{recommendation.card.bank}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Verified {fmtVerified(recommendation.card.lastVerified)} · confirm on bank site</div>
+                  <div className="font-semibold text-slate-800">{recCard.product}</div>
+                  <div className="text-sm text-slate-500">{recCard.bank}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{t(lang, "verifiedConfirm", { d: fmtVerified(recCard.lastVerified) })}</div>
                 </div>
                 <div className="text-3xl font-bold text-brand">{Math.round(recommendation.rule.rate * 100)}%</div>
               </div>
+
+              <label className="block text-sm mt-4">
+                <span className="text-slate-600">{t(lang, "howMuchSpend")}</span>
+                <input type="number" min={0} step={10000} value={recAmount || ""} onChange={(e) => setRecAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
+              </label>
+              {recAmount > 0 && (
+                <div className="mt-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+                  {t(lang, "youGetBack", { x: formatVND(estShown) })}
+                </div>
+              )}
+
+              {exceeded && (
+                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "capExceeded")}</div>
+              )}
+              {!exceeded && nearCap && remaining != null && (
+                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "nearCap", { x: formatVND(remaining) })}</div>
+              )}
+              {needsRegister && (
+                <div className="mt-2 text-xs text-violet-700 bg-violet-50 rounded-lg px-3 py-2">{t(lang, "registerReminder")}</div>
+              )}
+              {category === "foreign" && (
+                <div className="mt-2 text-xs text-slate-500">{t(lang, "fxNote")}</div>
+              )}
+
               {sourcesFor(category).length > 0 && (
                 <div className="mt-3 border-t border-slate-100 pt-3">
-                  <div className="text-xs font-medium text-slate-500 mb-1.5">Stack more cashback before you pay</div>
+                  <div className="text-xs font-medium text-slate-500 mb-1.5">{t(lang, "stackMore")}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {sourcesFor(category).map((src) => (
-                      <a
-                        key={src.name}
-                        href={src.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={src.note}
-                        className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100"
-                      >
+                      <a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">
                         {src.name} ↗
                       </a>
                     ))}
@@ -468,13 +484,14 @@ export default function App() {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="text-slate-500">No recommendation.</div>
+            );
+          })() : (
+            <div className="text-slate-500">{t(lang, "noRec")}</div>
           )}
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold mb-3">My wallet ({owned.length})</h2>
+          <h2 className="text-lg font-semibold mb-3">{t(lang, "myWallet")} ({owned.length})</h2>
           <div className="space-y-3">
             {owned.map((o) => {
               const card = catalogById(o.id);
@@ -482,7 +499,9 @@ export default function App() {
               const due = nextDue(o.dueDay);
               const isPaid = paid[o.id] === due.toISOString();
               const days = daysUntil(due);
-              const tone = dueTone(days);
+              const toneLabel = days <= 3 ? t(lang, "payNow") : days <= 7 ? t(lang, "dueSoon") : t(lang, "onTrack");
+              const toneDot = days <= 3 ? "bg-red-500" : days <= 7 ? "bg-amber-500" : "bg-emerald-500";
+              const toneText = days <= 3 ? "text-red-600" : days <= 7 ? "text-amber-600" : "text-emerald-600";
               const cap = effectiveCap(o);
               const used = usedForCard(o.id);
               const usedPct = cap ? Math.min(100, (used / cap) * 100) : 0;
@@ -492,13 +511,13 @@ export default function App() {
                     <div>
                       <div className="font-semibold text-slate-800">{card.product}</div>
                       <div className="text-sm text-slate-500">{card.bank}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Verified {fmtVerified(card.lastVerified)}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{t(lang, "verified", { d: fmtVerified(card.lastVerified) })}</div>
                     </div>
                     <button onClick={() => removeCard(o.id)} className="text-slate-300 hover:text-red-500 text-sm" aria-label="Remove card">x</button>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {bestForTags(card).map((t) => (
-                      <span key={t} className="text-xs bg-brand-light text-brand-dark px-2 py-0.5 rounded-full">{t}</span>
+                    {bestForTags(card, lang).map((tag) => (
+                      <span key={tag} className="text-xs bg-brand-light text-brand-dark px-2 py-0.5 rounded-full">{tag}</span>
                     ))}
                   </div>
                   <div className="flex items-center justify-between mt-3">
@@ -506,25 +525,25 @@ export default function App() {
                       {isPaid ? (
                         <>
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                          <span className="text-sm font-medium text-emerald-600">Paid</span>
-                          <span className="text-sm text-slate-400">next due day {o.dueDay}</span>
+                          <span className="text-sm font-medium text-emerald-600">{t(lang, "paid")}</span>
+                          <span className="text-sm text-slate-400">{t(lang, "nextDueDay", { n: o.dueDay })}</span>
                         </>
                       ) : (
                         <>
-                          <span className={"w-2.5 h-2.5 rounded-full " + tone.dot} />
-                          <span className={"text-sm font-medium " + tone.text}>{tone.label}</span>
-                          <span className="text-sm text-slate-500">· due in {days} day(s)</span>
+                          <span className={"w-2.5 h-2.5 rounded-full " + toneDot} />
+                          <span className={"text-sm font-medium " + toneText}>{toneLabel}</span>
+                          <span className="text-sm text-slate-500">{t(lang, "dueInDot", { n: days })}</span>
                         </>
                       )}
                     </div>
                     {!isPaid && (
-                      <button onClick={() => markPaid(o.id)} className="text-xs border border-brand text-brand rounded-full px-3 py-1 hover:bg-brand-light">Mark as paid</button>
+                      <button onClick={() => markPaid(o.id)} className="text-xs border border-brand text-brand rounded-full px-3 py-1 hover:bg-brand-light">{t(lang, "markAsPaid")}</button>
                     )}
                   </div>
                   {cap && (
                     <div className="mt-2">
                       <div className="flex justify-between text-xs text-slate-400 mb-1">
-                        <span>Cashback used this period</span>
+                        <span>{t(lang, "cashbackUsedPeriod")}</span>
                         <span>{formatVND(used)} / {formatVND(cap)}</span>
                       </div>
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -534,38 +553,35 @@ export default function App() {
                   )}
                   <div className="flex items-center gap-3 mt-3 text-xs text-slate-500">
                     <label className="flex items-center gap-1">
-                      Statement day
+                      {t(lang, "statementDay")}
                       <input type="number" min={1} max={28} value={o.statementDay} onChange={(e) => updateCardDay(o.id, "statementDay", +e.target.value)} className="w-14 border border-slate-200 rounded px-2 py-1" />
                     </label>
                     <label className="flex items-center gap-1">
-                      Due day
+                      {t(lang, "dueDayLbl")}
                       <input type="number" min={1} max={28} value={o.dueDay} onChange={(e) => updateCardDay(o.id, "dueDay", +e.target.value)} className="w-14 border border-slate-200 rounded px-2 py-1" />
                     </label>
                     <label className="flex items-center gap-1">
-                      Max cashback
+                      {t(lang, "maxCashback")}
                       <input type="number" min={0} step={50000} value={o.customCapVND ?? ""} placeholder={cap ? String(cap) : "none"} onChange={(e) => updateCardCap(o.id, +e.target.value)} className="w-24 border border-slate-200 rounded px-2 py-1" />
                     </label>
                   </div>
                 </div>
               );
             })}
-            {owned.length === 0 && <p className="text-slate-500 text-sm">No cards yet.</p>}
+            {owned.length === 0 && <p className="text-slate-500 text-sm">{t(lang, "noCardsYet")}</p>}
           </div>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold mb-3">Add a card</h2>
+          <h2 className="text-lg font-semibold mb-3">{t(lang, "addACard")}</h2>
           <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
-            <p className="text-sm text-slate-600">Tick every card you own — add them all at once.</p>
+            <p className="text-sm text-slate-600">{t(lang, "tickEvery")}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {availableToAdd.map((c) => {
                 const checked = selectedIds.includes(c.id);
                 const applyUrl = cardApplyLink(c.bank);
                 return (
-                  <div
-                    key={c.id}
-                    className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}
-                  >
+                  <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
                     <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
                       <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
                       <span className="min-w-0">
@@ -575,28 +591,26 @@ export default function App() {
                     </button>
                     {applyUrl && (
                       <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
-                        Apply ↗
+                        {t(lang, "apply")} ↗
                       </a>
                     )}
                   </div>
                 );
               })}
-              {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">All catalog cards added.</p>}
+              {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>}
             </div>
             <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
-              {selectedIds.length === 0 ? "Select cards to add" : "Add " + selectedIds.length + " card" + (selectedIds.length === 1 ? "" : "s") + " to wallet"}
+              {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
             </button>
-            <p className="text-xs text-slate-400">New cards start with statement day 1 and due day 15 — adjust each card's dates in your wallet above. Privacy-first: no bank login; everything stays on this device.</p>
+            <p className="text-xs text-slate-400">{t(lang, "newCardsNote")}</p>
             {hasAnyAffiliate() && (
-              <p className="text-[11px] text-slate-400 leading-snug">
-                "Apply" links are affiliate links — we may earn a commission at no extra cost to you. We rank cards by what's best for you, never by what pays us.
-              </p>
+              <p className="text-[11px] text-slate-400 leading-snug">{t(lang, "applyAffiliate")}</p>
             )}
           </div>
         </section>
 
         <footer className="text-center text-xs text-slate-400 pt-4">
-          Reminders only fire while the app is open in your browser. Rates are a June 2026 draft and change often - confirm with your bank. Not financial advice.
+          {t(lang, "footer")}
         </footer>
       </main>
       )}
