@@ -88,6 +88,11 @@ function dueTone(days: number): { dot: string; text: string; label: string } {
 function catalogById(id: string): CardProduct | undefined {
   return CARDS.find((c) => c.id === id);
 }
+function fmtVerified(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
 function bestForTags(card: CardProduct): string[] {
   return card.rewards
     .filter((r) => r.category !== "everything")
@@ -439,6 +444,7 @@ export default function App() {
                 <div>
                   <div className="font-semibold text-slate-800">{recommendation.card.product}</div>
                   <div className="text-sm text-slate-500">{recommendation.card.bank}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Verified {fmtVerified(recommendation.card.lastVerified)} · confirm on bank site</div>
                 </div>
                 <div className="text-3xl font-bold text-brand">{Math.round(recommendation.rule.rate * 100)}%</div>
               </div>
@@ -486,6 +492,7 @@ export default function App() {
                     <div>
                       <div className="font-semibold text-slate-800">{card.product}</div>
                       <div className="text-sm text-slate-500">{card.bank}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Verified {fmtVerified(card.lastVerified)}</div>
                     </div>
                     <button onClick={() => removeCard(o.id)} className="text-slate-300 hover:text-red-500 text-sm" aria-label="Remove card">x</button>
                   </div>
