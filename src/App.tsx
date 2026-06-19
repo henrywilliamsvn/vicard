@@ -10,6 +10,7 @@ import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
+import { cardApplyLink, hasAnyAffiliate } from "./links";
 
 interface OwnedCard {
   id: string;
@@ -538,18 +539,25 @@ export default function App() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {availableToAdd.map((c) => {
                 const checked = selectedIds.includes(c.id);
+                const applyUrl = cardApplyLink(c.bank);
                 return (
-                  <button
+                  <div
                     key={c.id}
-                    onClick={() => toggleSelect(c.id)}
-                    className={"flex items-center gap-2 text-left text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}
+                    className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}
                   >
-                    <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
-                    <span>
-                      <span className="font-medium text-slate-700">{c.product}</span>
-                      <span className="block text-xs text-slate-400">{c.bank}</span>
-                    </span>
-                  </button>
+                    <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
+                      <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
+                      <span className="min-w-0">
+                        <span className="font-medium text-slate-700">{c.product}</span>
+                        <span className="block text-xs text-slate-400">{c.bank}</span>
+                      </span>
+                    </button>
+                    {applyUrl && (
+                      <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
+                        Apply ↗
+                      </a>
+                    )}
+                  </div>
                 );
               })}
               {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">All catalog cards added.</p>}
@@ -558,6 +566,11 @@ export default function App() {
               {selectedIds.length === 0 ? "Select cards to add" : "Add " + selectedIds.length + " card" + (selectedIds.length === 1 ? "" : "s") + " to wallet"}
             </button>
             <p className="text-xs text-slate-400">New cards start with statement day 1 and due day 15 — adjust each card's dates in your wallet above. Privacy-first: no bank login; everything stays on this device.</p>
+            {hasAnyAffiliate() && (
+              <p className="text-[11px] text-slate-400 leading-snug">
+                "Apply" links are affiliate links — we may earn a commission at no extra cost to you. We rank cards by what's best for you, never by what pays us.
+              </p>
+            )}
           </div>
         </section>
 

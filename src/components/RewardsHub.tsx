@@ -6,6 +6,8 @@ import {
   type RewardLayer,
   type RewardSource,
 } from "../rewardSources";
+import { rewardLink, hasAnyAffiliate } from "../links";
+import { getDeals } from "../deals";
 
 const CATEGORIES: { key: SpendCategory; label: string; emoji: string }[] = [
   { key: "online", emoji: "💻", label: "Online" },
@@ -42,6 +44,16 @@ function load<T>(key: string, fallback: T): T {
   }
 }
 
+function Disclosure() {
+  if (!hasAnyAffiliate()) return null;
+  return (
+    <p className="text-[11px] text-slate-400 mt-3 leading-snug">
+      Some links are affiliate links — we may earn a commission at no extra cost
+      to you. We always rank by what's best for you, never by what pays us.
+    </p>
+  );
+}
+
 export default function RewardsHub({
   bestCardLabel,
 }: {
@@ -75,6 +87,7 @@ export default function RewardsHub({
     () => buildStackingPlan(category, bestCardLabel(category)),
     [category, bestCardLabel]
   );
+  const deals = useMemo(() => getDeals(), []);
 
   return (
     <div className="space-y-8">
@@ -149,7 +162,7 @@ export default function RewardsHub({
                               {s.name}
                             </span>
                             <a
-                              href={s.setupUrl ?? s.url}
+                              href={rewardLink(s.name, s.setupUrl ?? s.url)}
                               target="_blank"
                               rel="noreferrer"
                               className="text-xs text-brand hover:underline shrink-0 ml-2"
@@ -226,7 +239,7 @@ export default function RewardsHub({
                         return (
                           <a
                             key={s.name}
-                            href={s.url}
+                            href={rewardLink(s.name, s.url)}
                             target="_blank"
                             rel="noreferrer"
                             title={s.note}
@@ -254,6 +267,39 @@ export default function RewardsHub({
           Promo rates change constantly — always check each app's voucher tab
           before paying. Not financial advice.
         </p>
+      </section>
+
+      {/* ---- Step 3: Deals right now --------------------------------------- */}
+      <section>
+        <h2 className="text-lg font-semibold mb-1">3 · Deals right now</h2>
+        <p className="text-sm text-slate-500 mb-3">
+          A few deals worth grabbing today. Tap to open the source.
+        </p>
+        <div className="space-y-2">
+          {deals.map((d) => (
+            <a
+              key={d.id}
+              href={d.link}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-xl bg-white shadow-sm border border-slate-100 p-3 hover:border-brand transition"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-800">{d.title}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{d.merchant}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  {d.expires && (
+                    <div className="text-[11px] text-amber-600 font-medium">{d.expires}</div>
+                  )}
+                  <div className="text-xs text-brand">Open ↗</div>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+        <Disclosure />
       </section>
     </div>
   );
