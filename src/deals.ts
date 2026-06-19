@@ -19,6 +19,7 @@ export interface Deal {
   merchant: string; // must match a reward-source `name` to inherit its affiliate link
   title: string;
   category: SpendCategory;
+  discountPct: number; // headline discount, used to match against wishlist targets
   url: string; // fallback public URL
   expires?: string; // human label, e.g. "Ends Sun" — optional
 }
@@ -30,37 +31,43 @@ export const SAMPLE_DEALS: Deal[] = [
     merchant: "ShopBack",
     title: "Up to 30% cashback on Shopee & Lazada via ShopBack",
     category: "online",
+    discountPct: 30,
     url: "https://www.shopback.com/vn",
     expires: "Ongoing",
   },
   {
     id: "d2",
     merchant: "Shopee Xu / ShopeePay",
-    title: "Collect daily Shopee Xu + platform vouchers",
+    title: "Collect daily Shopee Xu + platform vouchers (~15% off)",
     category: "online",
+    discountPct: 15,
     url: "https://shopee.vn",
     expires: "Daily",
   },
   {
     id: "d3",
     merchant: "MoMo",
-    title: "Food & delivery vouchers when you pay with MoMo",
+    title: "Food & delivery vouchers up to 20% when you pay with MoMo",
     category: "dining",
+    discountPct: 20,
     url: "https://momo.vn",
     expires: "This week",
   },
   {
     id: "d4",
     merchant: "Klook",
-    title: "Discounted attractions, tours & transport",
+    title: "Up to 25% off attractions, tours & transport",
     category: "travel",
+    discountPct: 25,
     url: "https://www.klook.com/vi",
     expires: "Seasonal",
   },
 ];
 
+export type DealWithLink = Deal & { link: string };
+
 // Returns deals with affiliate-aware URLs. Pass a category to filter.
-export function getDeals(category?: SpendCategory): (Deal & { link: string })[] {
+export function getDeals(category?: SpendCategory): DealWithLink[] {
   return SAMPLE_DEALS.filter((d) => !category || d.category === category).map(
     (d) => ({ ...d, link: rewardLink(d.merchant, d.url) })
   );

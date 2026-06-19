@@ -8,6 +8,7 @@ import {
 } from "./cards";
 import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
+import Wishlist from "./components/Wishlist";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasAnyAffiliate } from "./links";
@@ -128,7 +129,7 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"wallet" | "rewards">("wallet");
+  const [tab, setTab] = useState<"wallet" | "rewards" | "wishlist">("wallet");
   const [category, setCategory] = useState<SpendCategory>("dining");
   const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
 
@@ -297,12 +298,25 @@ export default function App() {
           >
             Max rewards
           </button>
+          <button
+            onClick={() => setTab("wishlist")}
+            className={
+              "flex-1 text-sm font-medium rounded-full py-2 transition " +
+              (tab === "wishlist" ? "bg-white text-brand shadow-sm" : "text-slate-500")
+            }
+          >
+            Wishlist
+          </button>
         </div>
       </div>
 
       {tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
           <RewardsHub bestCardLabel={bestCardLabel} />
+        </main>
+      ) : tab === "wishlist" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6">
+          <Wishlist notifyOn={notifyOn} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">
