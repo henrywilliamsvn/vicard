@@ -7,6 +7,7 @@ import {
   type SpendCategory,
 } from "./cards";
 import AccountBar from "./components/AccountBar";
+import RewardsHub from "./components/RewardsHub";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
 
@@ -126,8 +127,14 @@ export default function App() {
     [owned, log]
   );
 
+  const [tab, setTab] = useState<"wallet" | "rewards">("wallet");
   const [category, setCategory] = useState<SpendCategory>("dining");
   const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
+
+  function bestCardLabel(cat: SpendCategory): string | undefined {
+    const rec = bestCardFor(cat, ownedStates);
+    return rec ? rec.card.product : undefined;
+  }
 
   const summary = useMemo(() => {
     const now = new Date();
@@ -269,6 +276,34 @@ export default function App() {
         </div>
       </header>
 
+      <div className="max-w-2xl mx-auto px-5 pt-4">
+        <div className="flex gap-1 bg-slate-100 rounded-full p-1">
+          <button
+            onClick={() => setTab("wallet")}
+            className={
+              "flex-1 text-sm font-medium rounded-full py-2 transition " +
+              (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")
+            }
+          >
+            Wallet
+          </button>
+          <button
+            onClick={() => setTab("rewards")}
+            className={
+              "flex-1 text-sm font-medium rounded-full py-2 transition " +
+              (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")
+            }
+          >
+            Max rewards
+          </button>
+        </div>
+      </div>
+
+      {tab === "rewards" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6">
+          <RewardsHub bestCardLabel={bestCardLabel} />
+        </main>
+      ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">
         {dueSoon.length > 0 && (
           <div className="rounded-xl bg-red-50 border border-red-200 p-4">
@@ -530,6 +565,7 @@ export default function App() {
           Reminders only fire while the app is open in your browser. Rates are a June 2026 draft and change often - confirm with your bank. Not financial advice.
         </footer>
       </main>
+      )}
     </div>
   );
 }
