@@ -1,43 +1,32 @@
 // =============================================================================
 // Vietnam Credit Card Catalog  —  cards.ts
-// Curated "best-in-class" edition  ·  v0.2  ·  Refreshed June 19, 2026
+// Comprehensive edition  ·  v0.3  ·  Expanded June 21, 2026
 // =============================================================================
 //
-// This is the data "brain" of the app. The "which card?" engine filters the
-// cards the user owns, matches the spending category, and sorts by effective
-// rate (accounting for remaining monthly cap).
-//
-// CURATION RULE: this is NOT every card in Vietnam — it's the strongest one or
-// two cashback/rewards cards per spending category, so the recommendation is
-// always a genuinely good pick. Add more bank-by-bank over time.
-//
-// ⚠️ VERIFY BEFORE TRUSTING:
-// Vietnamese banks change cashback terms, caps and fees frequently, and promo
-// rates (tuition, Tet, partner deals) come and go. Many cards require you to
-// REGISTER a category each statement period to earn the headline rate, and
-// "up to X%" often depends on a monthly spend tier. Every card has a
-// `lastVerified` date — confirm on the bank's official page before relying on it.
+// v0.3 expands toward comprehensive coverage of the cashback cards Vietnamese
+// users actually carry (local + foreign banks + fintech). Confirm every rate on
+// the bank's official page; cards marked "(verify rates)" still need first-hand
+// confirmation. Citi Vietnam consumer cards migrated to UOB (July 2025).
 //
 // Rates are decimals (0.05 = 5%). Caps and fees are in VND.
-// `period: "statement"` ≈ one monthly billing cycle.
 // =============================================================================
 
 export type SpendCategory =
   | "dining"
   | "supermarket"
   | "online"
-  | "foreign"        // overseas / foreign-currency spend
+  | "foreign"
   | "fuel"
   | "travel"
-  | "education"      // tuition / school fees
+  | "education"
   | "entertainment"
   | "insurance"
-  | "everything";    // base/default rate
+  | "everything";
 
 export interface RewardRule {
   category: SpendCategory;
-  rate: number;              // decimal, e.g. 0.05 = 5%
-  capVND: number | null;     // max cashback for THIS category; null = uncapped
+  rate: number;
+  capVND: number | null;
   period: "statement" | "year";
   note?: string;
 }
@@ -48,20 +37,15 @@ export interface CardProduct {
   product: string;
   network?: "Visa" | "Mastercard" | "JCB" | "Other";
   rewards: RewardRule[];
-  totalCapVND?: number | null;   // overall cashback cap across all categories
+  totalCapVND?: number | null;
   totalCapPeriod?: "statement" | "year";
-  annualFeeVND?: number | null;  // null = not confirmed in research
+  annualFeeVND?: number | null;
   feeWaiver?: string;
-  lastVerified: string;          // ISO date
+  lastVerified: string;
   notes?: string;
 }
 
-// -----------------------------------------------------------------------------
-// THE CATALOG — curated best-in-class cashback/rewards cards (June 2026).
-// -----------------------------------------------------------------------------
-
 export const CARDS: CardProduct[] = [
-  // ---- All-rounders / flat-rate default cards ------------------------------
   {
     id: "standard-chartered-platinum-cashback",
     bank: "Standard Chartered",
@@ -71,7 +55,7 @@ export const CARDS: CardProduct[] = [
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
       { category: "foreign", rate: 0.01, capVND: null, period: "statement" },
     ],
-    totalCapVND: null,                 // notably uncapped
+    totalCapVND: null,
     annualFeeVND: null,
     lastVerified: "2026-06-19",
     notes: "0.5% on everything, 1% foreign, NO cashback cap — strong default for high spenders.",
@@ -82,18 +66,18 @@ export const CARDS: CardProduct[] = [
     product: "KBank Cashback Plus",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "up to 10% on selected categories" },
+      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "up to 10% selected" },
       { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
       { category: "dining", rate: 0.10, capVND: null, period: "statement" },
       { category: "travel", rate: 0.10, capVND: null, period: "statement" },
       { category: "entertainment", rate: 0.10, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement", note: "auto cashback on all other spend" },
+      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: 300_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "Auto cashback on ALL spend; up to 10% on selected categories. Combined cap ~300k/statement (verify current T&C). Fast 2-minute virtual card.",
+    notes: "Auto cashback on ALL spend; up to 10% selected. Cap ~300k/statement. Fast virtual card.",
   },
   {
     id: "shinhan-visa-cashback",
@@ -101,16 +85,45 @@ export const CARDS: CardProduct[] = [
     product: "Shinhan Visa Cash Back",
     network: "Visa",
     rewards: [
-      { category: "everything", rate: 0.003, capVND: null, period: "statement", note: "flat, no minimum spend" },
-      { category: "online", rate: 0.01, capVND: null, period: "statement", note: "special categories 0.3%–1%" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+      { category: "online", rate: 0.01, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "Flat 0.3% on everything (no min spend), up to 1% on special categories, 5% at Shinhan partner merchants. Simple, predictable.",
+    notes: "Flat 0.3% everything, up to 1% special categories, 5% at Shinhan partners.",
   },
-
-  // ---- Online shopping -----------------------------------------------------
+  {
+    id: "shinhan-365-cashback-platinum",
+    bank: "Shinhan",
+    product: "Shinhan 365 Cashback Platinum",
+    network: "Mastercard",
+    rewards: [
+      { category: "supermarket", rate: 0.10, capVND: 400_000, period: "statement", note: "12% with Be-SAFE debit; POS only; min 3M/statement" },
+      { category: "dining", rate: 0.05, capVND: 200_000, period: "statement" },
+      { category: "online", rate: 0.05, capVND: 200_000, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "10% supermarket (cap 400k) + 5% dining/online (cap 200k). Needs 3M/statement. (verify rates)",
+  },
+  {
+    id: "seabank-sealady-cashback",
+    bank: "SeABank",
+    product: "SeABank SeALady Cashback",
+    network: "Mastercard",
+    rewards: [
+      { category: "everything", rate: 0.02, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 12_000_000,
+    totalCapPeriod: "year",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Flat 2% on everything, up to ~12M/year. Simple all-rounder. (verify rates)",
+  },
   {
     id: "vpbank-super-shopee-platinum",
     bank: "VPBank",
@@ -124,7 +137,7 @@ export const CARDS: CardProduct[] = [
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "10% back on Shopee / ShopeeFood, max ~400k/month. Best-in-class if you shop Shopee heavily.",
+    notes: "10% on Shopee/ShopeeFood, max ~400k/month.",
   },
   {
     id: "vib-cash-back",
@@ -132,14 +145,29 @@ export const CARDS: CardProduct[] = [
     product: "VIB Cash Back (Online Plus)",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.10, capVND: 2_000_000, period: "statement", note: "up to 10% on REGISTERED category; depends on spend tier" },
+      { category: "online", rate: 0.10, capVND: 2_000_000, period: "statement", note: "registered category; spend-tier dependent" },
       { category: "everything", rate: 0.01, capVND: null, period: "statement" },
     ],
     totalCapVND: 2_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "Up to 10% on a registered spend category; high cap 2,000,000 VND/statement. Rate depends on total spend tier.",
+    notes: "Up to 10% on a registered category; high cap 2,000,000/statement.",
+  },
+  {
+    id: "vib-online-plus-2in1",
+    bank: "VIB",
+    product: "VIB Online Plus 2in1",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.03, capVND: null, period: "statement", note: "3% online domestic" },
+      { category: "foreign", rate: 0.06, capVND: null, period: "statement", note: "6% overseas/online" },
+      { category: "everything", rate: 0.001, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "3% online domestic, 6% abroad, 0.1% offline. Confirm monthly cap.",
   },
   {
     id: "bidv-visa-cashback-online",
@@ -147,13 +175,13 @@ export const CARDS: CardProduct[] = [
     product: "BIDV Visa Cashback Online",
     network: "Visa",
     rewards: [
-      { category: "online", rate: 0.06, capVND: null, period: "statement", note: "6% at Tiki/Shopee/Lazada/TikTok Shop; 3% other online" },
+      { category: "online", rate: 0.06, capVND: null, period: "statement", note: "6% Tiki/Shopee/Lazada/TikTok; 3% other online" },
       { category: "everything", rate: 0.002, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "6% on big e-commerce sites, 3% other online. Confirm current monthly cap on BIDV's page.",
+    notes: "6% big e-commerce, 3% other online. Confirm monthly cap.",
   },
   {
     id: "vpbank-stepup",
@@ -161,7 +189,7 @@ export const CARDS: CardProduct[] = [
     product: "VPBank StepUP",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "general online (any merchant)" },
+      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "general online" },
       { category: "dining", rate: 0.02, capVND: null, period: "statement" },
       { category: "entertainment", rate: 0.02, capVND: null, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
@@ -169,9 +197,9 @@ export const CARDS: CardProduct[] = [
     totalCapVND: 600_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    feeWaiver: "First-year fee waived if ≥3 transactions of ≥300k VND within 30 days of opening",
+    feeWaiver: "First-year fee waived with 3 txns of 300k within 30 days",
     lastVerified: "2026-06-19",
-    notes: "5% on general online spend (not Shopee-specific). Combined cap ~600k/statement.",
+    notes: "5% general online (not Shopee-specific). Cap ~600k/statement.",
   },
   {
     id: "tpbank-evo-visa",
@@ -179,34 +207,95 @@ export const CARDS: CardProduct[] = [
     product: "TPBank EVO Visa",
     network: "Visa",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "0.5%–30% online depending on partner — 5% conservative baseline" },
-      { category: "education", rate: 0.10, capVND: null, period: "statement", note: "online tuition payments" },
+      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "0.5%-30% by partner" },
+      { category: "education", rate: 0.10, capVND: null, period: "statement", note: "online tuition" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
-    feeWaiver: "First-year fee waived with 3 transactions within 90 days",
+    feeWaiver: "First-year fee waived with 3 txns within 90 days",
     lastVerified: "2026-06-19",
-    notes: "Online focus; rate varies a lot by partner (0.5%–30%). Up to 10% on online tuition.",
+    notes: "Online focus; rate varies a lot by partner. Up to 10% online tuition.",
   },
-
-  // ---- Supermarket ---------------------------------------------------------
+  {
+    id: "ocb-igen-mastercard-platinum",
+    bank: "OCB",
+    product: "OCB iGEN Mastercard Platinum",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.10, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 12_000_000,
+    totalCapPeriod: "year",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Youth card; up to 10% online + entertainment. Cap ~12M/year. (verify rates)",
+  },
+  {
+    id: "acb-express-online",
+    bank: "ACB",
+    product: "ACB Express (online cashback)",
+    network: "Visa",
+    rewards: [
+      { category: "online", rate: 0.06, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "ACB online-focused cashback card. Confirm rate/cap/merchants. (verify rates)",
+  },
+  {
+    id: "sacombank-mastercard-online-cashback",
+    bank: "Sacombank",
+    product: "Sacombank Mastercard Online Cashback",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Online cashback Mastercard variant. (verify rates)",
+  },
   {
     id: "hsbc-visa-cashback",
     bank: "HSBC",
-    product: "HSBC Visa Cash Back",
+    product: "HSBC Cash Back (Visa)",
     network: "Visa",
     rewards: [
-      { category: "supermarket", rate: 0.08, capVND: 200_000, period: "statement", note: "up to 8%, max ~200k/month" },
-      { category: "education", rate: 0.01, capVND: null, period: "statement", note: "unlimited" },
-      { category: "insurance", rate: 0.01, capVND: null, period: "statement", note: "unlimited" },
+      { category: "supermarket", rate: 0.08, capVND: 200_000, period: "statement", note: "6% all + 2% payroll; shares cap with taxi" },
+      { category: "travel", rate: 0.08, capVND: 200_000, period: "statement", note: "taxi & limo; shares 200k cap" },
+      { category: "education", rate: 0.01, capVND: null, period: "statement", note: "unlimited health + education" },
+      { category: "insurance", rate: 0.01, capVND: null, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
     feeWaiver: "Issuance fee waived first year for new HSBC primary cardholders",
-    lastVerified: "2026-06-19",
-    notes: "8% supermarket (200k/month cap), unlimited 1% on education + insurance, 0.3% everything else.",
+    lastVerified: "2026-06-21",
+    notes: "Up to 8% supermarket + taxi (combined ~200k/month), unlimited 1% health+education.",
+  },
+  {
+    id: "hsbc-liveplus",
+    bank: "HSBC",
+    product: "HSBC Live+",
+    network: "Visa",
+    rewards: [
+      { category: "dining", rate: 0.06, capVND: null, period: "statement" },
+      { category: "online", rate: 0.06, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.06, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Lifestyle cashback — dining, shopping, entertainment. Confirm rate/cap. (verify rates)",
   },
   {
     id: "vcb-jcb-platinum",
@@ -214,15 +303,63 @@ export const CARDS: CardProduct[] = [
     product: "VCB JCB Platinum",
     network: "JCB",
     rewards: [
-      { category: "dining", rate: 0.05, capVND: null, period: "statement", note: "F&B" },
+      { category: "dining", rate: 0.05, capVND: null, period: "statement" },
       { category: "supermarket", rate: 0.05, capVND: null, period: "statement" },
       { category: "everything", rate: 0.002, capVND: null, period: "statement" },
     ],
     totalCapVND: 7_200_000,
-    totalCapPeriod: "year",          // ≈ 600k / month
+    totalCapPeriod: "year",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "5% on F&B + supermarket, 0.2% elsewhere. Combined cashback cap ~7.2M VND/year.",
+    notes: "5% F&B + supermarket, 0.2% else. Cap ~7.2M/year.",
+  },
+  {
+    id: "vcb-cashback-plus-amex",
+    bank: "Vietcombank",
+    product: "Vietcombank Cashback Plus American Express",
+    network: "Other",
+    rewards: [
+      { category: "dining", rate: 0.05, capVND: 300_000, period: "statement" },
+      { category: "supermarket", rate: 0.05, capVND: 300_000, period: "statement" },
+      { category: "everything", rate: 0.002, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 300_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Up to 5% dining + supermarket (cap ~300k/period), 0.2% else. Amex.",
+  },
+  {
+    id: "vietinbank-visa-cashback",
+    bank: "VietinBank",
+    product: "VietinBank Visa Cashback",
+    network: "Visa",
+    rewards: [
+      { category: "supermarket", rate: 0.06, capVND: 300_000, period: "statement", note: "needs >=5M/month" },
+      { category: "online", rate: 0.03, capVND: 300_000, period: "statement", note: "needs >=5M/month" },
+      { category: "everything", rate: 0.002, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "6% supermarket + 3% online (each ~300k/month), when spend >=5M/month.",
+  },
+  {
+    id: "vietinbank-mastercard-platinum-cashback",
+    bank: "VietinBank",
+    product: "VietinBank Mastercard Platinum Cashback",
+    network: "Mastercard",
+    rewards: [
+      { category: "supermarket", rate: 0.05, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 500_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Platinum cashback, max ~500k/period. Confirm category list. (verify rates)",
   },
   {
     id: "acb-visa-platinum",
@@ -230,32 +367,46 @@ export const CARDS: CardProduct[] = [
     product: "ACB Visa Platinum",
     network: "Visa",
     rewards: [
-      { category: "supermarket", rate: 0.10, capVND: 300_000, period: "statement", note: "10% for salary-account holders (6% others), at supermarkets & convenience stores" },
+      { category: "supermarket", rate: 0.10, capVND: 300_000, period: "statement", note: "10% salary holders (6% others)" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: 3_600_000,
-    totalCapPeriod: "year",          // ≈ 300k / month
+    totalCapPeriod: "year",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "10% supermarket/convenience for ACB salary holders (6% otherwise), cap ~300k/month (3.6M/year).",
+    notes: "10% supermarket/convenience for ACB salary holders (6% else), ~300k/month.",
   },
-
-  // ---- Dining / travel / digital lifestyle ---------------------------------
   {
     id: "techcombank-visa-signature",
     bank: "Techcombank",
     product: "Techcombank Visa Signature",
     network: "Visa",
     rewards: [
-      { category: "dining", rate: 0.10, capVND: null, period: "statement", note: "up to 10% restaurants" },
-      { category: "travel", rate: 0.03, capVND: null, period: "statement", note: "travel & hotels" },
+      { category: "dining", rate: 0.10, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.03, capVND: null, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: 3_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "Up to 10% dining + 3% travel/hotels, high combined cap ~3,000,000/month. Strong for diners.",
+    notes: "Up to 10% dining + 3% travel, cap ~3M/month. Strong for diners.",
+  },
+  {
+    id: "techcombank-priority-visa-signature",
+    bank: "Techcombank",
+    product: "Techcombank Priority Visa Signature",
+    network: "Visa",
+    rewards: [
+      { category: "dining", rate: 0.10, capVND: null, period: "statement", note: "partner restaurants" },
+      { category: "travel", rate: 0.03, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 5_000_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Priority tier: up to 10% partner dining, cap ~5M/month. Needs Priority status.",
   },
   {
     id: "cake-freedom-2in1",
@@ -263,17 +414,17 @@ export const CARDS: CardProduct[] = [
     product: "Cake Freedom 2in1",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.20, capVND: null, period: "statement", note: "e-commerce" },
-      { category: "dining", rate: 0.20, capVND: null, period: "statement", note: "F&B" },
-      { category: "supermarket", rate: 0.20, capVND: null, period: "statement", note: "supermarket + convenience stores" },
-      { category: "travel", rate: 0.20, capVND: null, period: "statement", note: "transport + delivery" },
+      { category: "online", rate: 0.20, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.20, capVND: null, period: "statement" },
+      { category: "supermarket", rate: 0.20, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.20, capVND: null, period: "statement" },
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: 1_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "20% across 5 categories (e-commerce, F&B, supermarket/convenience, transport/delivery), combined cap ~1,000,000/month. Digital-native.",
+    notes: "20% across 5 categories, combined cap ~1M/month. Digital-native.",
   },
   {
     id: "be-cake-2in1",
@@ -281,15 +432,15 @@ export const CARDS: CardProduct[] = [
     product: "Be Cake 2in1",
     network: "Mastercard",
     rewards: [
-      { category: "travel", rate: 0.20, capVND: 300_000, period: "statement", note: "transport on Be app" },
-      { category: "dining", rate: 0.20, capVND: 300_000, period: "statement", note: "food on Be app" },
+      { category: "travel", rate: 0.20, capVND: 300_000, period: "statement", note: "Be app transport" },
+      { category: "dining", rate: 0.20, capVND: 300_000, period: "statement", note: "Be app food" },
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: 1_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "20% on Be-app transport/food, 300k/category/statement, overall ~1,000,000/statement.",
+    notes: "20% on Be-app transport/food, 300k/category, overall ~1M/statement.",
   },
   {
     id: "msb-m-digi",
@@ -299,14 +450,29 @@ export const CARDS: CardProduct[] = [
     rewards: [
       { category: "dining", rate: 0.20, capVND: null, period: "statement" },
       { category: "travel", rate: 0.20, capVND: null, period: "statement" },
-      { category: "entertainment", rate: 0.20, capVND: null, period: "statement", note: "digital entertainment" },
+      { category: "entertainment", rate: 0.20, capVND: null, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: 300_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "20% on dining, travel and digital entertainment, combined cap ~300k/month.",
+    notes: "20% dining/travel/digital entertainment, cap ~300k/month.",
+  },
+  {
+    id: "mb-hi-collection",
+    bank: "MB Bank",
+    product: "MB Hi Collection",
+    network: "JCB",
+    rewards: [
+      { category: "online", rate: 0.05, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "MB youth/lifestyle card. Confirm cashback rates + caps. (verify rates)",
   },
   {
     id: "vpbank-lady-mastercard",
@@ -314,7 +480,7 @@ export const CARDS: CardProduct[] = [
     product: "VPBank Lady Mastercard",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.15, capVND: null, period: "statement", note: "select lifestyle/beauty/fashion categories" },
+      { category: "online", rate: 0.15, capVND: null, period: "statement", note: "select lifestyle/beauty/fashion" },
       { category: "dining", rate: 0.05, capVND: null, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
@@ -322,14 +488,73 @@ export const CARDS: CardProduct[] = [
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "Up to 15% on select lifestyle categories. Per-category cap applies; confirm category list.",
+    notes: "Up to 15% on select lifestyle categories. Per-category cap applies.",
   },
-
-  // ---- Foreign-currency spend ---------------------------------------------
+  {
+    id: "vpbank-cashback-platinum",
+    bank: "VPBank",
+    product: "VPBank Cashback Platinum",
+    network: "Mastercard",
+    rewards: [
+      { category: "everything", rate: 0.01, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Flat ~1% all-rounder. Confirm rate + cap. (verify rates)",
+  },
+  {
+    id: "uob-lady-card",
+    bank: "UOB",
+    product: "UOB Lady's Card",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.06, capVND: null, period: "statement", note: "fashion/beauty/lifestyle" },
+      { category: "dining", rate: 0.06, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Lifestyle rewards for chosen categories (ex-Citi, now UOB). (verify rates)",
+  },
+  {
+    id: "uob-one-card",
+    bank: "UOB",
+    product: "UOB One Card",
+    network: "Visa",
+    rewards: [
+      { category: "travel", rate: 0.10, capVND: null, period: "statement", note: "Grab & road transport" },
+      { category: "entertainment", rate: 0.05, capVND: null, period: "statement", note: "subscriptions" },
+      { category: "insurance", rate: 0.03, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement", note: "excludes fuel & utilities" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: 1_200_000,
+    feeWaiver: "First-year annual fee waived",
+    lastVerified: "2026-06-21",
+    notes: "10% Grab/transport, 5% subscriptions, 3% insurance, 0.3% else. Min income 8M; HCMC & Hanoi. (ex-Citi, now UOB)",
+  },
+  {
+    id: "uob-evol",
+    bank: "UOB",
+    product: "UOB EVOL",
+    network: "Visa",
+    rewards: [
+      { category: "online", rate: 0.06, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.06, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Online + entertainment cashback for younger users. Confirm rates + caps. (verify rates)",
+  },
   {
     id: "sacombank-platinum-cashback",
     bank: "Sacombank",
-    product: "Sacombank Platinum Cashback",
+    product: "Sacombank Visa Platinum Cashback",
     network: "Visa",
     rewards: [
       { category: "online", rate: 0.05, capVND: null, period: "statement" },
@@ -340,10 +565,53 @@ export const CARDS: CardProduct[] = [
     totalCapPeriod: "statement",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "5% online, 3% foreign POS, 0.5% other. Combined cap ~600k/statement.",
+    notes: "5% online, 3% foreign POS, 0.5% other. Cap ~600k/statement.",
   },
-
-  // ---- Education / insurance (Henry's insurance-audience niche) ------------
+  {
+    id: "eximbank-visa-platinum-cashback",
+    bank: "Eximbank",
+    product: "Eximbank Visa Platinum Cash Back",
+    network: "Visa",
+    rewards: [
+      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "up to 8% select" },
+      { category: "dining", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Up to 8% on selected categories. Confirm list/rates/cap. (verify rates)",
+  },
+  {
+    id: "tpbank-visa-freego",
+    bank: "TPBank",
+    product: "TPBank Visa FreeGo",
+    network: "Visa",
+    rewards: [
+      { category: "foreign", rate: 0.01, capVND: null, period: "statement", note: "0% FX markup (saves ~2-4% fee)" },
+      { category: "travel", rate: 0.02, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Travel card; key perk is no foreign-transaction fee. (verify rates)",
+  },
+  {
+    id: "hdbank-petrolimex-4in1",
+    bank: "HDBank",
+    product: "HDBank Petrolimex 4in1",
+    network: "Visa",
+    rewards: [
+      { category: "fuel", rate: 0.03, capVND: null, period: "statement", note: "fuel at Petrolimex" },
+      { category: "everything", rate: 0.002, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Fuel-focused; cashback/discount at Petrolimex. Confirm rate + cap. (verify rates)",
+  },
   {
     id: "ocb-jcb-platinum",
     bank: "OCB",
@@ -358,7 +626,24 @@ export const CARDS: CardProduct[] = [
     totalCapPeriod: "year",
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "15% on Education, Health and Insurance — up to ~18M VND/year. Powerful for school-fee / insurance payers.",
+    notes: "15% Education/Health/Insurance, up to ~18M/year. Great for tuition/insurance.",
+  },
+  {
+    id: "ocb-mastercard-platinum",
+    bank: "OCB",
+    product: "OCB Mastercard Platinum",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "technology/electronics" },
+      { category: "travel", rate: 0.05, capVND: null, period: "statement", note: "transport" },
+      { category: "insurance", rate: 0.01, capVND: 6_000_000, period: "year" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 12_000_000,
+    totalCapPeriod: "year",
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "10% technology, 5% transport, 1% insurance (cap ~6M/yr). Overall ~12M/year.",
   },
   {
     id: "vib-family-link",
@@ -366,26 +651,49 @@ export const CARDS: CardProduct[] = [
     product: "VIB Family Link",
     network: "Mastercard",
     rewards: [
-      { category: "education", rate: 0.10, capVND: null, period: "statement", note: "family/education-linked spend; 0% installment on tuition" },
+      { category: "education", rate: 0.10, capVND: null, period: "statement", note: "0% installment on tuition" },
       { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
     lastVerified: "2026-06-19",
-    notes: "10% on family-linked categories; 0% installment for tuition. Confirm exact eligible categories + cap.",
+    notes: "10% on family-linked categories; 0% installment for tuition. Confirm categories + cap.",
+  },
+  {
+    id: "vib-super-card",
+    bank: "VIB",
+    product: "VIB Super Card",
+    network: "Mastercard",
+    rewards: [
+      { category: "entertainment", rate: 0.15, capVND: null, period: "statement", note: "up to 15% movies/lifestyle (points)" },
+      { category: "dining", rate: 0.05, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Up to 15% entertainment/lifestyle (points like cashback). Confirm list + caps. (verify rates)",
+  },
+  {
+    id: "homecredit-home-card",
+    bank: "Home Credit",
+    product: "Home Credit Home Card",
+    network: "Other",
+    rewards: [
+      { category: "everything", rate: 0.005, capVND: null, period: "statement", note: "promo categories higher" },
+    ],
+    totalCapVND: null,
+    annualFeeVND: null,
+    lastVerified: "2026-06-21",
+    notes: "Easy-approval consumer-finance card. Cashback varies by promo. (verify rates)",
   },
 ];
 
-// -----------------------------------------------------------------------------
-// Helper: best card for a category, given the user's owned card IDs and the
-// cashback already used this period (so it respects caps).
-// -----------------------------------------------------------------------------
-
 export interface OwnedCardState {
   id: string;
-  usedThisPeriodVND: number;   // cashback already earned this statement period
-  capVND?: number | null;      // optional user override of the card's cashback cap
+  usedThisPeriodVND: number;
+  capVND?: number | null;
 }
 
 export function bestCardFor(
@@ -398,13 +706,11 @@ export function bestCardFor(
     const card = CARDS.find((c) => c.id === o.id);
     if (!card) continue;
 
-    // pick this card's best applicable rule (specific category, else "everything")
     const rule =
       card.rewards.find((r) => r.category === category) ??
       card.rewards.find((r) => r.category === "everything");
     if (!rule) continue;
 
-    // skip if the overall card cap for the period is already exhausted
     const cap = o.capVND !== undefined ? o.capVND : card.totalCapVND;
     if (cap != null && o.usedThisPeriodVND >= cap) continue;
 
