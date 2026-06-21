@@ -8,7 +8,6 @@ import {
 } from "./cards";
 import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
-import Wishlist from "./components/Wishlist";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasAnyAffiliate } from "./links";
@@ -129,7 +128,7 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"buy" | "wallet" | "rewards" | "wishlist">("buy");
+  const [tab, setTab] = useState<"buy" | "wallet" | "rewards">("buy");
   const [category, setCategory] = useState<SpendCategory>("dining");
   const [recAmount, setRecAmount] = useState<number>(0);
   const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
@@ -349,9 +348,6 @@ export default function App() {
           <button onClick={() => setTab("rewards")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
             {t(lang, "tabRewards")}
           </button>
-          <button onClick={() => setTab("wishlist")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wishlist" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabWishlist")}
-          </button>
         </div>
       </div>
 
@@ -360,10 +356,6 @@ export default function App() {
       ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
           <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
-        </main>
-      ) : tab === "wishlist" ? (
-        <main className="max-w-2xl mx-auto px-5 py-6">
-          <Wishlist notifyOn={notifyOn} lang={lang} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">

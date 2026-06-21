@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CARDS, bestCardFor, type CardProduct, type RewardRule, type OwnedCardState, type SpendCategory } from "./cards";
 import { buildStackingPlan } from "./rewardSources";
 import { cardApplyLink } from "./links";
+import { getDeals } from "./deals";
+import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
 
 interface Props {
@@ -23,26 +25,52 @@ const CATS: { key: SpendCategory; icon: string }[] = [
   { key: "everything", icon: "💳" },
 ];
 
-function vnd(n: number): string {
-  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
+const KEY_WISHLIST = "vicard.wishlist.v1";
+function load<T>(key: string, fallback: T): T {
+  try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : fallback; } catch { return fallback; }
 }
-function L(lang: Lang, en: string, vi: string): string {
-  return lang === "vi" ? vi : en;
-}
-function pct(rate: number): number {
-  return Math.round(rate * 100);
-}
+function vnd(n: number): string { return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ"; }
+function L(lang: Lang, en: string, vi: string): string { return lang === "vi" ? vi : en; }
+function pct(rate: number): number { return Math.round(rate * 100); }
 const PICK_ONE: Record<string, boolean> = { portal: true, wallet: true };
 
 interface Ranked { card: CardProduct; rule: RewardRule; remaining: number | null; }
 
+function detectMerchant(q: string, lang: Lang): { merchant: string; category: SpendCategory } | null {
+  const s = q.toLowerCase();
+  const looksLink = /https?:\/\//.test(s) || s.includes(".vn") || s.includes(".com");
+  if (!looksLink) return null;
+  const map: { host: string; merchant: string; category: SpendCategory }[] = [
+    { host: "shopeefood", merchant: "ShopeeFood", category: "dining" },
+    { host: "shopee", merchant: "Shopee", category: "online" },
+    { host: "lazada", merchant: "Lazada", category: "online" },
+    { host: "tiki", merchant: "Tiki", category: "online" },
+    { host: "tiktok", merchant: "TikTok Shop", category: "online" },
+    { host: "sendo", merchant: "Sendo", category: "online" },
+    { host: "agoda", merchant: "Agoda", category: "travel" },
+    { host: "booking", merchant: "Booking.com", category: "travel" },
+    { host: "klook", merchant: "Klook", category: "travel" },
+    { host: "traveloka", merchant: "Traveloka", category: "travel" },
+    { host: "grab", merchant: "Grab", category: "travel" },
+    { host: "baemin", merchant: "Baemin", category: "dining" },
+  ];
+  for (const m of map) if (s.includes(m.host)) return { merchant: m.merchant, category: m.category };
+  return { merchant: L(lang, "this link", "liên kết này"), category: "online" };
+}
+
 export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
+  const [query, setQuery] = useState<string>("");
+  const [target, setTarget] = useState<number>(20);
+  const [items, setItems] = useState<WishlistItem[]>(() => load(KEY_WISHLIST, []));
+  useEffect(() => { localStorage.setItem(KEY_WISHLIST, JSON.stringify(items)); }, [items]);
+
+  const detected = useMemo(() => detectMerchant(query, lang), [query, lang]);
+  useEffect(() => { if (detected) setCat(detected.category); }, [detected]);
 
   const hasCards = ownedStates.length > 0;
 
-  // STEP 2 — best card in the whole market for this category (regardless of ownership)
   const marketBest = useMemo(() => {
     let top: { card: CardProduct; rule: RewardRule } | null = null;
     for (const card of CARDS) {
@@ -53,7 +81,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
     return top;
   }, [cat]);
 
-  // STEP 3 — which of the user's cards apply, ranked
   const ranked = useMemo<Ranked[]>(() => {
     const list: Ranked[] = [];
     for (const os of ownedStates) {
@@ -68,7 +95,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
     return list.sort((a, b) => b.rule.rate - a.rule.rate);
   }, [cat, ownedStates]);
 
-  // STEP 4 — best benefit from cards they actually own (cap-aware)
   const best = useMemo(() => bestCardFor(cat, ownedStates), [cat, ownedStates]);
   const ownsMarketBest = !!marketBest && ownedStates.some((o) => o.id === marketBest.card.id);
 
@@ -92,11 +118,23 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const steps = useMemo(() => buildStackingPlan(cat, best?.card.product), [cat, best]);
   const applyUrl = marketBest ? cardApplyLink(marketBest.card.bank) : undefined;
 
+  const deals = useMemo(() => getDeals(), []);
+  const matches = useMemo(() => matchWishlist(items, deals), [items, deals]);
+  const totalMatches = countMatches(matches);
+
+  function addWatch() {
+    const name = query.trim() || catLabel(lang, cat);
+    setItems((prev) => [{ id: crypto.randomUUID(), name, category: cat, targetDiscountPct: Math.min(90, Math.max(1, target || 1)), createdAt: new Date().toISOString() }, ...prev]);
+  }
+  function removeWatch(id: string) { setItems((prev) => prev.filter((i) => i.id !== id)); }
+
+  const planLabel = query.trim() ? query.trim() : catLabel(lang, cat);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold mb-1">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>
-        <p className="text-sm text-slate-500">{L(lang, "Tap a category — we'll show the best card and how to pay.", "Chọn danh mục — chúng tôi chỉ thẻ tốt nhất và cách trả.")}</p>
+        <p className="text-sm text-slate-500">{L(lang, "Pick a category or paste a link — we'll show the best card and how to pay.", "Chọn danh mục hoặc dán liên kết — chúng tôi chỉ thẻ tốt nhất và cách trả.")}</p>
       </div>
 
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -112,12 +150,26 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         })}
       </div>
 
+      <div>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L(lang, "Type an item or paste a product link…", "Nhập món hàng hoặc dán liên kết sản phẩm…")} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
+        {detected && (
+          <div className="mt-1.5 text-xs text-brand-dark bg-brand-light inline-block rounded-full px-3 py-1">🔗 {detected.merchant} → {catLabel(lang, detected.category)}</div>
+        )}
+      </div>
+
       <label className="block text-sm">
         <span className="text-slate-600">{L(lang, "How much? (optional)", "Bao nhiêu? (tuỳ chọn)")}</span>
         <input type="number" min={0} step={10000} value={amount || ""} onChange={(e) => setAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" placeholder="0đ" />
       </label>
 
-      {/* STEP 2 — best card in the market for this purchase */}
+      <div className="flex items-end gap-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
+        <label className="block text-sm flex-1">
+          <span className="text-slate-600">{L(lang, "Notify me at ≥", "Báo khi giảm ≥")} {target}%</span>
+          <input type="range" min={5} max={70} step={5} value={target} onChange={(e) => setTarget(+e.target.value)} className="mt-2 w-full accent-brand" />
+        </label>
+        <button onClick={addWatch} className="bg-white border border-brand text-brand rounded-lg px-3 py-2 text-sm font-medium hover:bg-brand-light whitespace-nowrap">🔔 {L(lang, "Watch for deals", "Theo dõi ưu đãi")}</button>
+      </div>
+
       {marketBest && (
         <div className="rounded-xl border border-brand/30 bg-brand-light/60 p-4">
           <div className="text-[11px] uppercase tracking-wide text-brand-dark/70">{L(lang, "Best card for this purchase", "Thẻ tốt nhất cho giao dịch này")}</div>
@@ -138,12 +190,9 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         </div>
       )}
 
-      {/* STEP 4 — your real benefit + the pay steps */}
       <div className="rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
         <div className="bg-brand text-white px-5 py-4">
-          <div className="text-sm opacity-90">
-            {L(lang, "Your plan", "Kế hoạch của bạn")}{amount > 0 ? " · " + vnd(amount) : ""}
-          </div>
+          <div className="text-sm opacity-90">{L(lang, "Your plan", "Kế hoạch")} · {planLabel}{amount > 0 ? " · " + vnd(amount) : ""}</div>
           {cardCashback ? (
             <>
               <div className="text-2xl font-bold mt-1">{L(lang, "You save about", "Bạn tiết kiệm khoảng")} {vnd(cardCashback.capped)}</div>
@@ -177,30 +226,22 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
                   <div className="text-sm font-medium text-slate-800">
                     {isCard && best ? L(lang, "Pay with", "Trả bằng") + " " + best.card.product + " — " + pct(best.rule.rate) + "%" : s.title}
                   </div>
-                  {isCard && cardCashback && (
-                    <div className="text-xs text-brand mt-0.5">+{vnd(cardCashback.capped)} {L(lang, "cashback", "hoàn tiền")}</div>
-                  )}
+                  {isCard && cardCashback && (<div className="text-xs text-brand mt-0.5">+{vnd(cardCashback.capped)} {L(lang, "cashback", "hoàn tiền")}</div>)}
                   {isCard && overflowCard && (
                     <div className="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1">
                       {L(lang, "Cap runs out — put the rest on ", "Hết hạn mức — phần còn lại trả bằng ") + overflowCard.card.product + " (" + pct(overflowCard.rule.rate) + "%)"}
                     </div>
                   )}
-                  {isCard && !best && (
-                    <div className="text-xs text-slate-500 mt-0.5">{s.detail}</div>
-                  )}
+                  {isCard && !best && (<div className="text-xs text-slate-500 mt-0.5">{s.detail}</div>)}
                   {!isCard && s.sources.length > 0 && (
                     <div className="mt-1">
                       {pickOne && <div className="text-[11px] text-amber-700 mb-1">{L(lang, "Pick ONE:", "Chọn MỘT:")}</div>}
                       <div className="flex flex-wrap gap-1.5">
-                        {s.sources.map((src) => (
-                          <a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">{src.name} ↗</a>
-                        ))}
+                        {s.sources.map((src) => (<a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">{src.name} ↗</a>))}
                       </div>
                     </div>
                   )}
-                  {!isCard && s.sources.length === 0 && (
-                    <div className="text-xs text-slate-500 mt-0.5">{s.detail}</div>
-                  )}
+                  {!isCard && s.sources.length === 0 && (<div className="text-xs text-slate-500 mt-0.5">{s.detail}</div>)}
                 </div>
               </li>
             );
@@ -208,7 +249,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         </ol>
       </div>
 
-      {/* STEP 3 — your cards for this category */}
       {ranked.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-slate-700 mb-2">{L(lang, "Your cards for", "Thẻ của bạn cho") + " " + catLabel(lang, cat)}</h3>
@@ -217,13 +257,46 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
               <div key={r.card.id} className={"flex items-center justify-between rounded-lg border px-3 py-2 text-sm " + (i === 0 ? "border-brand bg-brand-light" : "border-slate-100 bg-white")}>
                 <div className="min-w-0">
                   <span className={"font-medium " + (i === 0 ? "text-brand-dark" : "text-slate-700")}>{r.card.product}</span>
-                  {r.remaining != null && (
-                    <span className="block text-xs text-slate-400">{L(lang, "cap left", "hạn mức còn") + ": " + vnd(r.remaining)}</span>
-                  )}
+                  {r.remaining != null && (<span className="block text-xs text-slate-400">{L(lang, "cap left", "hạn mức còn") + ": " + vnd(r.remaining)}</span>)}
                 </div>
                 <span className={"font-bold " + (i === 0 ? "text-brand" : "text-slate-500")}>{pct(r.rule.rate)}%</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700 mb-2">{L(lang, "Watching for deals", "Đang theo dõi ưu đãi")} ({items.length})</h3>
+          {totalMatches > 0 && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 mb-2 text-xs text-emerald-700 font-medium">🎯 {L(lang, totalMatches + " item(s) hit your target right now.", totalMatches + " món đạt mục tiêu ngay bây giờ.")}</div>
+          )}
+          <div className="space-y-2">
+            {matches.map(({ item, deals: hits }) => {
+              const hit = hits.length > 0;
+              return (
+                <div key={item.id} className={"rounded-lg border p-3 " + (hit ? "border-emerald-300 bg-emerald-50/50" : "border-slate-100 bg-white")}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-800 truncate">{item.name}</div>
+                      <div className="text-xs text-slate-400">{catLabel(lang, item.category)} · ≥{item.targetDiscountPct}%</div>
+                    </div>
+                    <button onClick={() => removeWatch(item.id)} className="text-slate-300 hover:text-red-500 text-lg leading-none" aria-label="Remove">×</button>
+                  </div>
+                  {hit && (
+                    <div className="mt-2 space-y-1.5">
+                      {hits.map((d) => (
+                        <a key={d.id} href={d.link} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded bg-white border border-emerald-200 px-2.5 py-1.5 hover:border-emerald-400">
+                          <span className="text-xs text-slate-700 truncate">{d.title}</span>
+                          <span className="text-xs font-semibold text-emerald-600 shrink-0">{d.discountPct}% ↗</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
