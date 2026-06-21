@@ -129,9 +129,6 @@ export default function App() {
   );
 
   const [tab, setTab] = useState<"buy" | "wallet" | "rewards">("buy");
-  const [category, setCategory] = useState<SpendCategory>("dining");
-  const [recAmount, setRecAmount] = useState<number>(0);
-  const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);
@@ -462,82 +459,6 @@ export default function App() {
             )}
           </section>
         )}
-
-        <section>
-          <h2 className="text-lg font-semibold mb-3">{t(lang, "whichCard")}</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {CATEGORIES.map((c) => (
-              <button key={c.key} onClick={() => setCategory(c.key)} className={"px-3 py-1.5 rounded-full text-sm border transition " + (category === c.key ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand")}>
-                {catLabel(lang, c.key)}
-              </button>
-            ))}
-          </div>
-          {owned.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-slate-500">{t(lang, "addToGetRec")}</div>
-          ) : recommendation ? (() => {
-            const recCard = recommendation.card;
-            const os = ownedStates.find((s) => s.id === recCard.id);
-            const cap = os?.capVND != null ? os.capVND : recCard.totalCapVND ?? null;
-            const used = os?.usedThisPeriodVND ?? 0;
-            const remaining = cap != null ? Math.max(0, cap - used) : null;
-            const est = recAmount > 0 ? recAmount * recommendation.rule.rate : 0;
-            const estShown = remaining != null ? Math.min(est, remaining) : est;
-            const needsRegister = /regist/i.test(recommendation.rule.note ?? "") || /regist/i.test(recCard.notes ?? "");
-            const nearCap = remaining != null && cap != null && remaining > 0 && remaining <= cap * 0.2;
-            const exceeded = remaining != null && recAmount > 0 && est > remaining;
-            return (
-            <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-5">
-              <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">{t(lang, "bestCardFor", { cat: catLabel(lang, category) })}</div>
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <div className="font-semibold text-slate-800">{recCard.product}</div>
-                  <div className="text-sm text-slate-500">{recCard.bank}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{t(lang, "verifiedConfirm", { d: fmtVerified(recCard.lastVerified) })}</div>
-                </div>
-                <div className="text-3xl font-bold text-brand">{Math.round(recommendation.rule.rate * 100)}%</div>
-              </div>
-
-              <label className="block text-sm mt-4">
-                <span className="text-slate-600">{t(lang, "howMuchSpend")}</span>
-                <input type="number" min={0} step={10000} value={recAmount || ""} onChange={(e) => setRecAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-              </label>
-              {recAmount > 0 && (
-                <div className="mt-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
-                  {t(lang, "youGetBack", { x: formatVND(estShown) })}
-                </div>
-              )}
-
-              {exceeded && (
-                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "capExceeded")}</div>
-              )}
-              {!exceeded && nearCap && remaining != null && (
-                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "nearCap", { x: formatVND(remaining) })}</div>
-              )}
-              {needsRegister && (
-                <div className="mt-2 text-xs text-violet-700 bg-violet-50 rounded-lg px-3 py-2">{t(lang, "registerReminder")}</div>
-              )}
-              {category === "foreign" && (
-                <div className="mt-2 text-xs text-slate-500">{t(lang, "fxNote")}</div>
-              )}
-
-              {sourcesFor(category).length > 0 && (
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <div className="text-xs font-medium text-slate-500 mb-1.5">{t(lang, "stackMore")}</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {sourcesFor(category).map((src) => (
-                      <a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">
-                        {src.name} ↗
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            );
-          })() : (
-            <div className="text-slate-500">{t(lang, "noRec")}</div>
-          )}
-        </section>
 
         <section>
           <h2 className="text-lg font-semibold mb-3">{t(lang, "myWallet")} ({owned.length})</h2>
