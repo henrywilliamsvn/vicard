@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { bestCardFor, type OwnedCardState, type SpendCategory } from "./cards";
+import { CARDS, bestCardFor, type CardProduct, type RewardRule, type OwnedCardState, type SpendCategory } from "./cards";
 import { buildStackingPlan } from "./rewardSources";
 import { catLabel, type Lang } from "./i18n";
 
@@ -30,11 +30,27 @@ function L(lang: Lang, en: string, vi: string): string {
 }
 const PICK_ONE: Record<string, boolean> = { portal: true, wallet: true };
 
+interface Ranked { card: CardProduct; rule: RewardRule; remaining: number | null; }
+
 export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
 
   const best = useMemo(() => bestCardFor(cat, ownedStates), [cat, ownedStates]);
+
+  const ranked = useMemo<Ranked[]>(() => {
+    const list: Ranked[] = [];
+    for (const os of ownedStates) {
+      const card = CARDS.find((c) => c.id === os.id);
+      if (!card) continue;
+      const rule = card.rewards.find((r) => r.category === cat) ?? card.rewards.find((r) => r.category === "everything");
+      if (!rule) continue;
+      const cap = os.capVND != null ? os.capVND : card.totalCapVND ?? null;
+      const remaining = cap != null ? Math.max(0, cap - os.usedThisPeriodVND) : null;
+      list.push({ card, rule, remaining });
+    }
+    return list.sort((a, b) => b.rule.rate - a.rule.rate);
+  }, [cat, ownedStates]);
 
   const cardCashback = useMemo(() => {
     if (!best || amount <= 0) return null;
@@ -46,6 +62,12 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
     const capped = remaining != null ? Math.min(raw, remaining) : raw;
     return { raw, capped, remaining };
   }, [best, amount, ownedStates]);
+
+  const overflowCard = useMemo(() => {
+    if (!best || !cardCashback || cardCashback.remaining == null) return null;
+    if (cardCashback.raw <= cardCashback.remaining) return null;
+    return ranked.find((r) => r.card.id !== best.card.id && (r.remaining == null || r.remaining > 0)) ?? null;
+  }, [best, cardCashback, ranked]);
 
   const steps = useMemo(() => buildStackingPlan(cat, best?.card.product), [cat, best]);
 
@@ -121,6 +143,11 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
                   {isCard && cardCashback && (
                     <div className="text-xs text-brand mt-0.5">+{vnd(cardCashback.capped)} {L(lang, "cashback", "hoàn tiền")}</div>
                   )}
+                  {isCard && overflowCard && (
+                    <div className="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1">
+                      {L(lang, "Cap runs out — put the rest on ", "Hết hạn mức — phần còn lại trả bằng ") + overflowCard.card.product + " (" + Math.round(overflowCard.rule.rate * 100) + "%)"}
+                    </div>
+                  )}
                   {!isCard && s.sources.length > 0 && (
                     <div className="mt-1">
                       {pickOne && <div className="text-[11px] text-amber-700 mb-1">{L(lang, "Pick ONE:", "Chọn MỘT:")}</div>}
@@ -140,6 +167,25 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           })}
         </ol>
       </div>
+
+      {ranked.length > 1 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700 mb-2">{L(lang, "Your cards for", "Thẻ của bạn cho") + " " + catLabel(lang, cat)}</h3>
+          <div className="space-y-1.5">
+            {ranked.slice(0, 4).map((r, i) => (
+              <div key={r.card.id} className={"flex items-center justify-between rounded-lg border px-3 py-2 text-sm " + (i === 0 ? "border-brand bg-brand-light" : "border-slate-100 bg-white")}>
+                <div className="min-w-0">
+                  <span className={"font-medium " + (i === 0 ? "text-brand-dark" : "text-slate-700")}>{r.card.product}</span>
+                  {r.remaining != null && (
+                    <span className="block text-xs text-slate-400">{L(lang, "cap left", "hạn mức còn") + ": " + vnd(r.remaining)}</span>
+                  )}
+                </div>
+                <span className={"font-bold " + (i === 0 ? "text-brand" : "text-slate-500")}>{Math.round(r.rule.rate * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="text-xs text-slate-400">
         {L(lang, "Savings are an estimate. Wallet/portal promos change daily — pick the single best one. Card cashback is capped to your card's monthly limit.", "Số tiết kiệm là ước tính. Khuyến mãi ví/cổng đổi hằng ngày — chọn cái tốt nhất. Hoàn tiền thẻ bị giới hạn theo hạn mức tháng.")}
