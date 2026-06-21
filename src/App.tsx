@@ -13,6 +13,7 @@ import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasAnyAffiliate } from "./links";
 import { useLang, t, catLabel } from "./i18n";
+import BuyFlow from "./BuyFlow";
 
 interface OwnedCard {
   id: string;
@@ -128,7 +129,7 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"wallet" | "rewards" | "wishlist">("wallet");
+  const [tab, setTab] = useState<"buy" | "wallet" | "rewards" | "wishlist">("buy");
   const [category, setCategory] = useState<SpendCategory>("dining");
   const [recAmount, setRecAmount] = useState<number>(0);
   const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
@@ -197,6 +198,8 @@ export default function App() {
     setPaid((prev) => ({ ...prev, [cardId]: due.toISOString() }));
   }
   function removeCard(id: string) {
+    const name = catalogById(id)?.product ?? "this card";
+    if (!confirm(t(lang, "confirmRemove", { card: name }))) return;
     setOwned((prev) => prev.filter((o) => o.id !== id));
   }
 
@@ -261,6 +264,52 @@ export default function App() {
   }
   const recentLog = log.slice(0, 6);
 
+  const welcomeHero = (
+    <section className="rounded-xl bg-brand-light border border-brand/20 p-5">
+      <h2 className="text-lg font-semibold text-brand-dark mb-1">{t(lang, "welcomeTitle")}</h2>
+      <p className="text-sm text-slate-600">{t(lang, "welcomeBody")}</p>
+    </section>
+  );
+
+  const addCardSection = (
+    <section>
+      <h2 className="text-lg font-semibold mb-3">{t(lang, "addACard")}</h2>
+      <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
+        <p className="text-sm text-slate-600">{t(lang, "tickEvery")}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {availableToAdd.map((c) => {
+            const checked = selectedIds.includes(c.id);
+            const applyUrl = cardApplyLink(c.bank);
+            return (
+              <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
+                <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
+                  <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
+                  <span className="min-w-0">
+                    <span className="font-medium text-slate-700">{c.product}</span>
+                    <span className="block text-xs text-slate-400">{c.bank}</span>
+                  </span>
+                </button>
+                {applyUrl && (
+                  <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
+                    {t(lang, "apply")} ↗
+                  </a>
+                )}
+              </div>
+            );
+          })}
+          {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>}
+        </div>
+        <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
+          {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
+        </button>
+        <p className="text-xs text-slate-400">{t(lang, "newCardsNote")}</p>
+        {hasAnyAffiliate() && (
+          <p className="text-[11px] text-slate-400 leading-snug">{t(lang, "applyAffiliate")}</p>
+        )}
+      </div>
+    </section>
+  );
+
   const langBtn = (
     <button
       onClick={() => setLang(lang === "vi" ? "en" : "vi")}
@@ -291,6 +340,9 @@ export default function App() {
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
         <div className="flex gap-1 bg-slate-100 rounded-full p-1">
+          <button onClick={() => setTab("buy")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "buy" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
+            {lang === "vi" ? "Mua gì?" : "Buy"}
+          </button>
           <button onClick={() => setTab("wallet")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
             {t(lang, "tabWallet")}
           </button>
@@ -303,7 +355,9 @@ export default function App() {
         </div>
       </div>
 
-      {tab === "rewards" ? (
+      {tab === "buy" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} /></main>
+      ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
           <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
         </main>
@@ -331,6 +385,9 @@ export default function App() {
             </ul>
           </div>
         )}
+
+        {owned.length === 0 && welcomeHero}
+        {owned.length === 0 && addCardSection}
 
         {owned.length > 0 && (
           <section>
@@ -404,7 +461,7 @@ export default function App() {
                       <span>{formatVND(p.amountVND)} · <span className="text-slate-500">{catalogById(p.cardId)?.product}</span></span>
                       <span className="flex items-center gap-3">
                         <span className="text-brand font-medium">+{formatVND(p.cashbackVND)}</span>
-                        <button onClick={() => deletePurchase(p.id)} className="text-slate-300 hover:text-red-500" aria-label="Delete">x</button>
+                        <button onClick={() => deletePurchase(p.id)} className="text-slate-300 hover:text-red-500 text-base leading-none" aria-label="Delete">×</button>
                       </span>
                     </div>
                   );
@@ -513,7 +570,7 @@ export default function App() {
                       <div className="text-sm text-slate-500">{card.bank}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{t(lang, "verified", { d: fmtVerified(card.lastVerified) })}</div>
                     </div>
-                    <button onClick={() => removeCard(o.id)} className="text-slate-300 hover:text-red-500 text-sm" aria-label="Remove card">x</button>
+                    <button onClick={() => removeCard(o.id)} className="text-slate-300 hover:text-red-500 text-lg leading-none" aria-label="Remove card">×</button>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {bestForTags(card, lang).map((tag) => (
@@ -572,42 +629,7 @@ export default function App() {
           </div>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold mb-3">{t(lang, "addACard")}</h2>
-          <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
-            <p className="text-sm text-slate-600">{t(lang, "tickEvery")}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {availableToAdd.map((c) => {
-                const checked = selectedIds.includes(c.id);
-                const applyUrl = cardApplyLink(c.bank);
-                return (
-                  <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
-                    <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
-                      <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
-                      <span className="min-w-0">
-                        <span className="font-medium text-slate-700">{c.product}</span>
-                        <span className="block text-xs text-slate-400">{c.bank}</span>
-                      </span>
-                    </button>
-                    {applyUrl && (
-                      <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
-                        {t(lang, "apply")} ↗
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-              {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>}
-            </div>
-            <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
-              {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
-            </button>
-            <p className="text-xs text-slate-400">{t(lang, "newCardsNote")}</p>
-            {hasAnyAffiliate() && (
-              <p className="text-[11px] text-slate-400 leading-snug">{t(lang, "applyAffiliate")}</p>
-            )}
-          </div>
-        </section>
+        {owned.length > 0 && addCardSection}
 
         <footer className="text-center text-xs text-slate-400 pt-4">
           {t(lang, "footer")}
