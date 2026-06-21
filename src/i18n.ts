@@ -85,6 +85,10 @@ const DICT = {
   maxCashback: { en: "Max cashback", vi: "Hoàn tiền tối đa" },
   noCardsYet: { en: "No cards yet.", vi: "Chưa có thẻ nào." },
 
+  welcomeTitle: { en: "👋 Welcome to Ví Thẻ", vi: "👋 Chào mừng đến Ví Thẻ" },
+  welcomeBody: { en: "Add the cards you own and we'll tell you which one to swipe for the most cashback — and when each bill is due. Start below.", vi: "Thêm các thẻ bạn có, chúng tôi sẽ mách bạn nên quẹt thẻ nào để hoàn tiền nhiều nhất — và khi nào tới hạn thanh toán. Bắt đầu bên dưới." },
+  confirmRemove: { en: "Remove {card} from your wallet? Its dates and cashback settings will be lost.", vi: "Xoá {card} khỏi ví? Ngày tháng và thiết lập hoàn tiền của thẻ sẽ mất." },
+
   addACard: { en: "Add a card", vi: "Thêm thẻ" },
   tickEvery: { en: "Tick every card you own — add them all at once.", vi: "Chọn các thẻ bạn có — thêm tất cả cùng lúc." },
   apply: { en: "Apply", vi: "Mở thẻ" },
