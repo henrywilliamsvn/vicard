@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CARDS, bestCardFor, type CardProduct, type RewardRule, type OwnedCardState, type SpendCategory } from "./cards";
 import { buildStackingPlan } from "./rewardSources";
+import { cardApplyLink } from "./links";
 import { catLabel, type Lang } from "./i18n";
 
 interface Props {
@@ -28,6 +29,9 @@ function vnd(n: number): string {
 function L(lang: Lang, en: string, vi: string): string {
   return lang === "vi" ? vi : en;
 }
+function pct(rate: number): number {
+  return Math.round(rate * 100);
+}
 const PICK_ONE: Record<string, boolean> = { portal: true, wallet: true };
 
 interface Ranked { card: CardProduct; rule: RewardRule; remaining: number | null; }
@@ -36,8 +40,20 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
 
-  const best = useMemo(() => bestCardFor(cat, ownedStates), [cat, ownedStates]);
+  const hasCards = ownedStates.length > 0;
 
+  // STEP 2 — best card in the whole market for this category (regardless of ownership)
+  const marketBest = useMemo(() => {
+    let top: { card: CardProduct; rule: RewardRule } | null = null;
+    for (const card of CARDS) {
+      const rule = card.rewards.find((r) => r.category === cat) ?? card.rewards.find((r) => r.category === "everything");
+      if (!rule) continue;
+      if (!top || rule.rate > top.rule.rate) top = { card, rule };
+    }
+    return top;
+  }, [cat]);
+
+  // STEP 3 — which of the user's cards apply, ranked
   const ranked = useMemo<Ranked[]>(() => {
     const list: Ranked[] = [];
     for (const os of ownedStates) {
@@ -51,6 +67,10 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
     }
     return list.sort((a, b) => b.rule.rate - a.rule.rate);
   }, [cat, ownedStates]);
+
+  // STEP 4 — best benefit from cards they actually own (cap-aware)
+  const best = useMemo(() => bestCardFor(cat, ownedStates), [cat, ownedStates]);
+  const ownsMarketBest = !!marketBest && ownedStates.some((o) => o.id === marketBest.card.id);
 
   const cardCashback = useMemo(() => {
     if (!best || amount <= 0) return null;
@@ -70,25 +90,13 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   }, [best, cardCashback, ranked]);
 
   const steps = useMemo(() => buildStackingPlan(cat, best?.card.product), [cat, best]);
-
-  if (ownedStates.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center">
-        <p className="text-slate-600 mb-3">
-          {L(lang, "Add the cards you own first — then we'll show exactly how to pay for the most cashback.", "Thêm các thẻ bạn có trước — rồi chúng tôi sẽ chỉ cách trả để hoàn tiền nhiều nhất.")}
-        </p>
-        <button onClick={onAddCards} className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-dark">
-          {L(lang, "Add my cards", "Thêm thẻ của tôi")}
-        </button>
-      </div>
-    );
-  }
+  const applyUrl = marketBest ? cardApplyLink(marketBest.card.bank) : undefined;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold mb-1">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>
-        <p className="text-sm text-slate-500">{L(lang, "Tap a category — we'll build the cheapest way to pay.", "Chọn danh mục — chúng tôi tìm cách trả tiết kiệm nhất.")}</p>
+        <p className="text-sm text-slate-500">{L(lang, "Tap a category — we'll show the best card and how to pay.", "Chọn danh mục — chúng tôi chỉ thẻ tốt nhất và cách trả.")}</p>
       </div>
 
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -109,10 +117,32 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         <input type="number" min={0} step={10000} value={amount || ""} onChange={(e) => setAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" placeholder="0đ" />
       </label>
 
+      {/* STEP 2 — best card in the market for this purchase */}
+      {marketBest && (
+        <div className="rounded-xl border border-brand/30 bg-brand-light/60 p-4">
+          <div className="text-[11px] uppercase tracking-wide text-brand-dark/70">{L(lang, "Best card for this purchase", "Thẻ tốt nhất cho giao dịch này")}</div>
+          <div className="flex items-center justify-between mt-1 gap-3">
+            <div className="min-w-0">
+              <div className="font-semibold text-slate-800">{marketBest.card.product} <span className="text-brand">{pct(marketBest.rule.rate)}%</span></div>
+              <div className="text-xs text-slate-500">{marketBest.card.bank}</div>
+            </div>
+            {ownsMarketBest ? (
+              <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">{L(lang, "In your wallet ✓", "Có trong ví ✓")}</span>
+            ) : applyUrl ? (
+              <a href={applyUrl} target="_blank" rel="noreferrer" className="text-xs bg-brand text-white rounded-full px-3 py-1.5 font-medium whitespace-nowrap hover:bg-brand-dark">{L(lang, "Apply", "Mở thẻ")} ↗</a>
+            ) : null}
+          </div>
+          {!ownsMarketBest && best && marketBest.rule.rate > best.rule.rate && (
+            <div className="text-xs text-amber-700 mt-2">{L(lang, "Beats your best owned card", "Cao hơn thẻ tốt nhất bạn có") + " (" + pct(best.rule.rate) + "%)."}</div>
+          )}
+        </div>
+      )}
+
+      {/* STEP 4 — your real benefit + the pay steps */}
       <div className="rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
         <div className="bg-brand text-white px-5 py-4">
           <div className="text-sm opacity-90">
-            {L(lang, "Buying", "Đang mua")} {catLabel(lang, cat)}{amount > 0 ? " · " + vnd(amount) : ""}
+            {L(lang, "Your plan", "Kế hoạch của bạn")}{amount > 0 ? " · " + vnd(amount) : ""}
           </div>
           {cardCashback ? (
             <>
@@ -122,12 +152,19 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
               )}
               <div className="text-xs opacity-90 mt-0.5">{L(lang, "Card cashback only — stack the steps below for more.", "Chỉ tính hoàn tiền thẻ — làm thêm các bước dưới để cộng dồn.")}</div>
             </>
+          ) : best ? (
+            <div className="text-base font-medium mt-1">{pct(best.rule.rate) + "% " + L(lang, "with", "với") + " " + best.card.product}</div>
           ) : (
-            <div className="text-base font-medium mt-1">
-              {best ? Math.round(best.rule.rate * 100) + "% " + L(lang, "with", "với") + " " + best.card.product : L(lang, "No card for this category yet", "Chưa có thẻ cho danh mục này")}
-            </div>
+            <div className="text-sm font-medium mt-1 opacity-95">{L(lang, "Add a card to calculate your cashback.", "Thêm thẻ để tính hoàn tiền của bạn.")}</div>
           )}
         </div>
+
+        {!hasCards && (
+          <div className="px-5 py-3 bg-amber-50 text-amber-800 text-sm flex items-center justify-between gap-3">
+            <span>{L(lang, "Tell us which cards you have to personalise this.", "Cho biết bạn có thẻ nào để cá nhân hoá.")}</span>
+            <button onClick={onAddCards} className="bg-brand text-white rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap hover:bg-brand-dark">{L(lang, "Add cards", "Thêm thẻ")}</button>
+          </div>
+        )}
 
         <ol className="divide-y divide-slate-100">
           {steps.map((s) => {
@@ -138,15 +175,18 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
                 <div className="flex-none w-6 h-6 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-xs font-semibold">{s.order}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-slate-800">
-                    {isCard && best ? L(lang, "Pay with", "Trả bằng") + " " + best.card.product + " — " + Math.round(best.rule.rate * 100) + "%" : s.title}
+                    {isCard && best ? L(lang, "Pay with", "Trả bằng") + " " + best.card.product + " — " + pct(best.rule.rate) + "%" : s.title}
                   </div>
                   {isCard && cardCashback && (
                     <div className="text-xs text-brand mt-0.5">+{vnd(cardCashback.capped)} {L(lang, "cashback", "hoàn tiền")}</div>
                   )}
                   {isCard && overflowCard && (
                     <div className="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1">
-                      {L(lang, "Cap runs out — put the rest on ", "Hết hạn mức — phần còn lại trả bằng ") + overflowCard.card.product + " (" + Math.round(overflowCard.rule.rate * 100) + "%)"}
+                      {L(lang, "Cap runs out — put the rest on ", "Hết hạn mức — phần còn lại trả bằng ") + overflowCard.card.product + " (" + pct(overflowCard.rule.rate) + "%)"}
                     </div>
+                  )}
+                  {isCard && !best && (
+                    <div className="text-xs text-slate-500 mt-0.5">{s.detail}</div>
                   )}
                   {!isCard && s.sources.length > 0 && (
                     <div className="mt-1">
@@ -168,7 +208,8 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         </ol>
       </div>
 
-      {ranked.length > 1 && (
+      {/* STEP 3 — your cards for this category */}
+      {ranked.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-slate-700 mb-2">{L(lang, "Your cards for", "Thẻ của bạn cho") + " " + catLabel(lang, cat)}</h3>
           <div className="space-y-1.5">
@@ -180,7 +221,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
                     <span className="block text-xs text-slate-400">{L(lang, "cap left", "hạn mức còn") + ": " + vnd(r.remaining)}</span>
                   )}
                 </div>
-                <span className={"font-bold " + (i === 0 ? "text-brand" : "text-slate-500")}>{Math.round(r.rule.rate * 100)}%</span>
+                <span className={"font-bold " + (i === 0 ? "text-brand" : "text-slate-500")}>{pct(r.rule.rate)}%</span>
               </div>
             ))}
           </div>
