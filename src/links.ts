@@ -45,6 +45,7 @@ export const AFFILIATE: AffiliateConfig = {
     MoMo: undefined,
     ZaloPay: undefined,
     Klook: undefined,
+    Traveloka: "https://shorten.asia/1cg6CF37",
   },
 
   cardApplyUrls: {

@@ -126,6 +126,15 @@ export const REWARD_SOURCES: RewardSource[] = [
     setup: "Create a Klook account and turn on the newsletter for promo codes. Always check Klook before booking attractions.",
     setupUrl: "https://www.klook.com/vi",
   },
+  {
+    name: "Traveloka",
+    layer: "voucher",
+    categories: ["travel"],
+    note: "Book flights + hotels in one place — check promos and pay with your best travel card.",
+    url: "https://www.traveloka.com/vi-vn",
+    setup: "Open Traveloka, compare flight/hotel prices, grab in-app promos, and pay with your best travel card.",
+    setupUrl: "https://www.traveloka.com/vi-vn",
+  },
 ];
 
 export function sourcesFor(category: SpendCategory): RewardSource[] {
