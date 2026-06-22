@@ -37,6 +37,11 @@ export const AFFILIATE: AffiliateConfig = {
     "AccessTrade / Adpia": undefined,
     "Shopee Xu / ShopeePay": undefined,
     "Lazada vouchers / LazWallet": undefined,
+    "TikTok Shop": "https://shorten.asia/4a5fHmSn",
+    Tiki: "https://shorten.asia/6k7T9nqN",
+    // Shopee + Lazada VN: join requests PENDING approval on AccessTrade (gated). Paste links here once approved.
+    Shopee: undefined,
+    Lazada: undefined,
     MoMo: undefined,
     ZaloPay: undefined,
     Klook: undefined,

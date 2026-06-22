@@ -10,7 +10,7 @@ import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
-import { cardApplyLink, hasAnyAffiliate } from "./links";
+import { cardApplyLink, hasAnyAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
 
@@ -432,7 +432,7 @@ export default function App() {
                         {sourcesFor(logCat).map((src, i) => (
                           <span key={src.name}>
                             {i > 0 ? ", " : ""}
-                            <a href={src.url} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline" title={src.note}>{src.name}</a>
+                            <a href={rewardLink(src.name, src.url)} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline" title={src.note}>{src.name}</a>
                           </span>
                         ))}
                       </div>

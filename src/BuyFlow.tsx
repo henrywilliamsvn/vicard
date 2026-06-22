@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CARDS, bestCardFor, type CardProduct, type RewardRule, type OwnedCardState, type SpendCategory } from "./cards";
 import { buildStackingPlan } from "./rewardSources";
-import { cardApplyLink } from "./links";
+import { cardApplyLink, rewardLink } from "./links";
 import { getDeals } from "./deals";
 import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
@@ -237,7 +237,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
                     <div className="mt-1">
                       {pickOne && <div className="text-[11px] text-amber-700 mb-1">{L(lang, "Pick ONE:", "Chọn MỘT:")}</div>}
                       <div className="flex flex-wrap gap-1.5">
-                        {s.sources.map((src) => (<a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">{src.name} ↗</a>))}
+                        {s.sources.map((src) => (<a key={src.name} href={rewardLink(src.name, src.url)} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">{src.name} ↗</a>))}
                       </div>
                     </div>
                   )}
