@@ -24,43 +24,82 @@ export interface Deal {
   expires?: string; // human label, e.g. "Ends Sun" — optional
 }
 
-// Hand-picked examples. Edit freely — these are illustrative, not guaranteed.
+// Hand-picked deals. Two kinds:
+//   • LIVE EARNERS — `merchant` matches a reward source that has an affiliate
+//     link in links.ts (Tiki, TikTok Shop, Traveloka), so the link earns now.
+//   • BRAND DEALS — paste the campaign's shorten.asia link straight into `url`;
+//     since the brand `merchant` has no entry in links.ts referralUrls,
+//     rewardLink() returns the url as-is (already an affiliate link).
+//   • INFO DEALS — public URL only; they start earning once you add that
+//     merchant's referral link in links.ts.
 export const SAMPLE_DEALS: Deal[] = [
+  // ---- Live earners (route through your AccessTrade affiliate links) -------
   {
-    id: "d1",
-    merchant: "ShopBack",
-    title: "Up to 30% cashback on Shopee & Lazada via ShopBack",
+    id: "tiki-online",
+    merchant: "Tiki",
+    title: "Hàng chính hãng + voucher & freeship trên Tiki",
+    category: "online",
+    discountPct: 20,
+    url: "https://tiki.vn/",
+    expires: "Đang diễn ra",
+  },
+  {
+    id: "tiktok-online",
+    merchant: "TikTok Shop",
+    title: "Săn voucher & deal livestream trên TikTok Shop",
     category: "online",
     discountPct: 30,
-    url: "https://www.shopback.com/vn",
-    expires: "Ongoing",
+    url: "https://www.tiktok.com/",
+    expires: "Hằng ngày",
   },
   {
-    id: "d2",
-    merchant: "Shopee Xu / ShopeePay",
-    title: "Collect daily Shopee Xu + platform vouchers (~15% off)",
+    id: "traveloka-travel",
+    merchant: "Traveloka",
+    title: "Vé máy bay + khách sạn ưu đãi trên Traveloka",
+    category: "travel",
+    discountPct: 15,
+    url: "https://www.traveloka.com/vi-vn",
+    expires: "Đang diễn ra",
+  },
+
+  // ---- Brand deals (paste real shorten.asia links into `url` to earn) ------
+  {
+    id: "shopdunk-online",
+    merchant: "ShopDunk",
+    title: "iPhone, Mac & phụ kiện Apple chính hãng — trả góp 0%, thu cũ đổi mới",
+    category: "online",
+    discountPct: 10,
+    url: "https://shorten.asia/T77pqcKx",
+    expires: "Đang diễn ra",
+  },
+  {
+    id: "thefaceshop-online",
+    merchant: "The Face Shop",
+    title: "Mỹ phẩm thiên nhiên Hàn Quốc — ưu đãi & quà tặng tại The Face Shop",
     category: "online",
     discountPct: 15,
-    url: "https://shopee.vn",
-    expires: "Daily",
+    url: "https://shorten.asia/bZ1MUjz3",
+    expires: "Đang diễn ra",
   },
+
+  // ---- Info deals (earn once you add the referral link in links.ts) -------
   {
-    id: "d3",
+    id: "momo-dining",
     merchant: "MoMo",
-    title: "Food & delivery vouchers up to 20% when you pay with MoMo",
+    title: "Voucher ăn uống & giao đồ ăn tới 20% khi trả bằng MoMo",
     category: "dining",
     discountPct: 20,
     url: "https://momo.vn",
-    expires: "This week",
+    expires: "Trong tuần",
   },
   {
-    id: "d4",
-    merchant: "Klook",
-    title: "Up to 25% off attractions, tours & transport",
-    category: "travel",
-    discountPct: 25,
-    url: "https://www.klook.com/vi",
-    expires: "Seasonal",
+    id: "shopback-online",
+    merchant: "ShopBack",
+    title: "Hoàn tiền tới 30% trên Shopee & Lazada qua ShopBack",
+    category: "online",
+    discountPct: 30,
+    url: "https://www.shopback.com/vn",
+    expires: "Đang diễn ra",
   },
 ];
 

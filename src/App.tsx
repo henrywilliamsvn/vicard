@@ -13,6 +13,7 @@ import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasAnyAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
+import DealsTab from "./components/DealsTab";
 
 interface OwnedCard {
   id: string;
@@ -128,7 +129,7 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"buy" | "wallet" | "rewards">("buy");
+  const [tab, setTab] = useState<"buy" | "wallet" | "rewards" | "deals">("buy");
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);
@@ -345,6 +346,9 @@ export default function App() {
           <button onClick={() => setTab("rewards")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
             {t(lang, "tabRewards")}
           </button>
+          <button onClick={() => setTab("deals")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "deals" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
+            {t(lang, "tabDeals")}
+          </button>
         </div>
       </div>
 
@@ -353,6 +357,10 @@ export default function App() {
       ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
           <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
+        </main>
+      ) : tab === "deals" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6">
+          <DealsTab lang={lang} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">

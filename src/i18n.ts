@@ -39,6 +39,14 @@ const DICT = {
 
   tabWallet: { en: "Wallet", vi: "Ví thẻ" },
   tabRewards: { en: "Max rewards", vi: "Tối đa ưu đãi" },
+  tabDeals: { en: "Deals", vi: "Ưu đãi" },
+  dealsTitle: { en: "Deals right now", vi: "Ưu đãi đang có" },
+  dealsSub: {
+    en: "Hand-picked deals — tap to open. Links route through your affiliate, so qualifying buys earn.",
+    vi: "Ưu đãi chọn lọc — chạm để mở. Link đã gắn affiliate nên đơn hợp lệ sẽ sinh hoa hồng.",
+  },
+  dealsAll: { en: "All", vi: "Tất cả" },
+  dealsEmpty: { en: "No deals in this category yet.", vi: "Chưa có ưu đãi cho mục này." },
   tabWishlist: { en: "Wishlist", vi: "Muốn mua" },
 
   paymentsDue: { en: "{n} payment(s) due soon", vi: "{n} khoản sắp đến hạn" },
