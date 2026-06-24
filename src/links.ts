@@ -33,7 +33,7 @@ export const AFFILIATE: AffiliateConfig = {
   referralUrls: {
     // TODO paste your referral links, e.g.:
     // ShopBack: "https://www.shopback.com/vn?raf=YOURCODE",
-    ShopBack: undefined,
+    ShopBack: "https://app.shopback.com/uNejSgC7b4b",
     "AccessTrade / Adpia": undefined,
     "Shopee Xu / ShopeePay": undefined,
     "Lazada vouchers / LazWallet": undefined,
@@ -42,9 +42,9 @@ export const AFFILIATE: AffiliateConfig = {
     // Shopee + Lazada VN: join requests PENDING approval on AccessTrade (gated). Paste links here once approved.
     Shopee: undefined,
     Lazada: undefined,
-    MoMo: undefined,
-    ZaloPay: undefined,
-    Klook: undefined,
+    MoMo: "https://onelink.momo.vn/WZPv/MsyZKIuN?utm_source=referral_others",
+    ZaloPay: "https://onelink.zalopay.vn/cross-border-referral?referral_code=8HA3KVUN",
+    Klook: "https://s.klook.com/c/l3PZWW0j3V",
     Traveloka: "https://shorten.asia/1cg6CF37",
   },
 
