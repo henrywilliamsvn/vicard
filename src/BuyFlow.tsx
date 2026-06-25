@@ -151,7 +151,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
       </div>
 
       <div>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L(lang, "Type an item or paste a product link…", "Nhập món hàng hoặc dán liên kết sản phẩm…")} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
+        <input id="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L(lang, "Type an item or paste a product link…", "Nhập món hàng hoặc dán liên kết sản phẩm…")} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
         {detected && (
           <div className="mt-1.5 text-xs text-brand-dark bg-brand-light inline-block rounded-full px-3 py-1">🔗 {detected.merchant} → {catLabel(lang, detected.category)}</div>
         )}
@@ -162,7 +162,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         <input type="number" min={0} step={10000} value={amount || ""} onChange={(e) => setAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" placeholder="0đ" />
       </label>
 
-      <div className="flex items-end gap-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
+      <div id="price-alert-trigger" className="flex items-end gap-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
         <label className="block text-sm flex-1">
           <span className="text-slate-600">{L(lang, "Notify me at ≥", "Báo khi giảm ≥")} {target}%</span>
           <input type="range" min={5} max={70} step={5} value={target} onChange={(e) => setTarget(+e.target.value)} className="mt-2 w-full accent-brand" />
@@ -171,7 +171,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
       </div>
 
       {marketBest && (
-        <div className="rounded-xl border border-brand/30 bg-brand-light/60 p-4">
+        <div id="cashback-comparison-section" className="rounded-xl border border-brand/30 bg-brand-light/60 p-4">
           <div className="text-[11px] uppercase tracking-wide text-brand-dark/70">{L(lang, "Best card for this purchase", "Thẻ tốt nhất cho giao dịch này")}</div>
           <div className="flex items-center justify-between mt-1 gap-3">
             <div className="min-w-0">
@@ -190,7 +190,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         </div>
       )}
 
-      <div className="rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+      <div id="bonus-channels-guide" className="rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
         <div className="bg-brand text-white px-5 py-4">
           <div className="text-sm opacity-90">{L(lang, "Your plan", "Kế hoạch")} · {planLabel}{amount > 0 ? " · " + vnd(amount) : ""}</div>
           {cardCashback ? (

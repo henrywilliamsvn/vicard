@@ -14,6 +14,7 @@ import { cardApplyLink, hasAnyAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
 import DealsTab from "./components/DealsTab";
+import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
 interface OwnedCard {
   id: string;
@@ -130,6 +131,19 @@ export default function App() {
   );
 
   const [tab, setTab] = useState<"buy" | "wallet" | "rewards" | "deals">("buy");
+
+  // First-time product tour (Meo instructor + voice). Runs once, on the Buy tab.
+  const [runTour, setRunTour] = useState(false);
+  const tourSteps = useMemo(
+    () => DEFAULT_TOUR_STEPS.map((s) => ({ ...s, beforeStep: () => setTab("buy") })),
+    []
+  );
+  useEffect(() => {
+    if (typeof localStorage !== "undefined" && !localStorage.getItem("mss_tour_done")) {
+      const id = window.setTimeout(() => setRunTour(true), 800);
+      return () => window.clearTimeout(id);
+    }
+  }, []);
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);
@@ -319,6 +333,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      <ProductTour
+        run={runTour}
+        steps={tourSteps}
+        onFinish={() => {
+          setRunTour(false);
+          if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
+        }}
+      />
       <header className="bg-brand text-white">
         <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
           <div>
@@ -554,6 +576,11 @@ export default function App() {
 
         <footer className="text-center text-xs text-slate-400 pt-4">
           {t(lang, "footer")}
+          <div className="pt-2">
+            <a href="/privacy.html" className="underline hover:text-slate-600">{t(lang, "privacyLink")}</a>
+            <span className="mx-2">·</span>
+            <a href="/affiliate-disclosure.html" className="underline hover:text-slate-600">{t(lang, "disclosureLink")}</a>
+          </div>
         </footer>
       </main>
       )}
