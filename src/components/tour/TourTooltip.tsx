@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { TourMascot, type MascotMood } from "./TourMascot";
 
 const TOOLTIP_WIDTH = 348;
@@ -108,18 +108,15 @@ export function TourTooltip({
         {muted ? "🔇 Bật tiếng" : "🔊 Tắt tiếng"}
       </button>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -14 }}
-          transition={{ duration: 0.22 }}
-        >
-          <h3 className="mss-title">{title}</h3>
-          <p className="mss-body">{body}</p>
-        </motion.div>
-      </AnimatePresence>
+      <motion.div
+        key={index}
+        initial={{ opacity: 0, x: 14 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.22 }}
+      >
+        <h3 className="mss-title">{title}</h3>
+        <p className="mss-body">{body}</p>
+      </motion.div>
 
       <div className="mss-dots" aria-hidden>
         {Array.from({ length: total }).map((_, i) => (
