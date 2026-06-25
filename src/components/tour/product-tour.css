@@ -22,11 +22,20 @@
 /* =========================================================================
    Custom tooltip card
    ========================================================================= */
+/* Portal host on <html>: clicks pass through except on the tooltip itself. */
+.mss-tour-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+}
+
 .mss-tooltip {
   position: fixed;
-  z-index: 1000000; /* above Driver's overlay */
+  z-index: 2147483647; /* above Driver's overlay stacking context */
+  pointer-events: auto; /* host is none; re-enable on the card so buttons click */
   box-sizing: border-box;
-  padding: 22px 18px 16px;
+  padding: 32px 18px 16px;
   background: #ffffff;
   border: 1px solid rgba(255, 122, 26, 0.18);
   border-radius: 20px;
@@ -59,10 +68,10 @@
 /* ---- Mascot ---- */
 .mss-mascot-wrap {
   position: absolute;
-  top: -62px;
-  left: -16px;
-  width: 104px;
-  height: 104px;
+  top: -58px;
+  left: 12px;
+  width: 84px;
+  height: 84px;
   pointer-events: none;
 }
 .mss-mascot {
@@ -74,8 +83,8 @@
   justify-content: center;
 }
 .mss-mascot-img {
-  width: 92px;
-  height: 92px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   border-radius: 50%; /* round the orange-background avatar into a clean badge */
   border: 3px solid #fff;
