@@ -142,14 +142,20 @@
   gap: 6px;
   margin-bottom: 14px;
 }
-.mss-dots span {
-  width: 7px;
-  height: 7px;
+.mss-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
   border-radius: 999px;
   background: #e2e8f0;
+  cursor: pointer;
   transition: all 0.25s ease;
 }
-.mss-dots span.on {
+.mss-dot:hover {
+  background: #fdba74;
+}
+.mss-dot.on {
   width: 22px;
   background: #ff7a1a;
 }
@@ -211,7 +217,8 @@
 .mss-skip,
 .mss-prev,
 .mss-next,
-.mss-dots {
+.mss-dots,
+.mss-dot {
   pointer-events: auto;
 }
 

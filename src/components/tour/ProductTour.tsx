@@ -288,6 +288,7 @@ export default function ProductTour({
         onPrev={() => index > 0 && void showStep(index - 1)}
         onSkip={finish}
         onToggleMute={toggleMute}
+        onGoto={(i) => void showStep(i)}
       />
     </>,
     document.body

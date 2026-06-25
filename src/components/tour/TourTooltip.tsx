@@ -21,6 +21,7 @@ type Props = {
   onPrev: () => void;
   onSkip: () => void;
   onToggleMute: () => void;
+  onGoto: (i: number) => void;
 };
 
 /**
@@ -41,6 +42,7 @@ export function TourTooltip({
   onPrev,
   onSkip,
   onToggleMute,
+  onGoto,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; placement: Placement }>({
@@ -118,9 +120,16 @@ export function TourTooltip({
         <p className="mss-body">{body}</p>
       </motion.div>
 
-      <div className="mss-dots" aria-hidden>
+      <div className="mss-dots">
         {Array.from({ length: total }).map((_, i) => (
-          <span key={i} className={i === index ? "on" : ""} />
+          <button
+            key={i}
+            type="button"
+            className={"mss-dot" + (i === index ? " on" : "")}
+            aria-label={`Bước ${i + 1}`}
+            aria-current={i === index}
+            onClick={() => onGoto(i)}
+          />
         ))}
       </div>
 
