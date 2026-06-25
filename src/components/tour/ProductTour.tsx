@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
 import "./product-tour.css";
 import { TourTooltip } from "./TourTooltip";
 import type { MascotMood } from "./TourMascot";
@@ -63,7 +61,7 @@ type Props = {
   mascotSrc?: string;
 };
 
-type DriverInstance = ReturnType<typeof driver>;
+const SPOTLIGHT_PAD = 8;
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                   */
@@ -85,12 +83,14 @@ function waitForElement(selector: string, timeout = 4000): Promise<Element | nul
   });
 }
 
-/** Prefer a Vietnamese system voice, then the requested lang, then anything. */
+/** Prefer a Vietnamese voice; otherwise fall back to the default / any voice so audio still plays. */
 function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
   if (!voices.length) return null;
   return (
     voices.find((v) => v.lang?.toLowerCase().startsWith("vi")) ??
     voices.find((v) => v.lang === lang) ??
+    voices.find((v) => v.default) ??
+    voices[0] ??
     null
   );
 }
@@ -112,10 +112,12 @@ export default function ProductTour({
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
-  const driverRef = useRef<DriverInstance | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
+  const indexRef = useRef(index);
+  indexRef.current = index;
+  const primeRef = useRef<(() => void) | null>(null);
 
   /* ---- Load TTS voices (async on most browsers) ---- */
   useEffect(() => {
@@ -159,42 +161,39 @@ export default function ProductTour({
     setIndex(i);
 
     if (!el) {
-      // Target missing (e.g. not on this tab) — show a centered tooltip anyway.
       // eslint-disable-next-line no-console
       console.warn(`[ProductTour] target not found: ${step.target}`);
       setRect(null);
       return;
     }
 
-    driverRef.current?.highlight({ element: el as HTMLElement });
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    // Measure after the smooth-scroll / spotlight animation settles.
+    // Measure after the smooth-scroll settles.
     window.setTimeout(() => setRect(el.getBoundingClientRect()), 360);
   }
 
   function startTour() {
-    driverRef.current?.destroy();
-    driverRef.current = driver({
-      animate: true,
-      overlayColor: "#0f172a",
-      overlayOpacity: 0.62,
-      stagePadding: 8,
-      stageRadius: 14,
-      allowClose: false,
-      allowKeyboardControl: false,
-      disableActiveInteraction: true,
-    });
     setActive(true);
     setMuted(false);
     mutedRef.current = false;
+    // Browsers block speech synthesis until a user gesture; the tour auto-starts,
+    // so speak the current step on the first interaction (covers step 1's audio).
+    const prime = () => {
+      const s = steps[indexRef.current];
+      if (s) speak(s.body, true);
+    };
+    primeRef.current = prime;
+    window.addEventListener("pointerdown", prime, { once: true });
     void showStep(0);
   }
 
   function finish() {
+    if (primeRef.current) {
+      window.removeEventListener("pointerdown", primeRef.current);
+      primeRef.current = null;
+    }
     window.speechSynthesis?.cancel();
     setSpeaking(false);
-    driverRef.current?.destroy();
-    driverRef.current = null;
     setActive(false);
     onFinish?.();
   }
@@ -214,7 +213,7 @@ export default function ProductTour({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, index]);
 
-  /* ---- Keep the tooltip glued to the target on scroll / resize ---- */
+  /* ---- Keep the spotlight + tooltip glued to the target on scroll / resize ---- */
   useEffect(() => {
     if (!active) return;
     const step = steps[index];
@@ -235,7 +234,6 @@ export default function ProductTour({
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
-      driverRef.current?.destroy();
     };
   }, []);
 
@@ -257,22 +255,41 @@ export default function ProductTour({
   const step = steps[index];
   if (!active || !step) return null;
 
+  // Spotlight overlay: a transparent rect over the target with a huge box-shadow
+  // that dims everything else. pointer-events:none — it NEVER blocks clicks.
+  const overlay = rect ? (
+    <div
+      className="mss-overlay"
+      style={{
+        top: rect.top - SPOTLIGHT_PAD,
+        left: rect.left - SPOTLIGHT_PAD,
+        width: rect.width + SPOTLIGHT_PAD * 2,
+        height: rect.height + SPOTLIGHT_PAD * 2,
+      }}
+    />
+  ) : (
+    <div className="mss-overlay mss-overlay-full" />
+  );
+
   return createPortal(
-    <TourTooltip
-      title={step.title}
-      body={step.body}
-      mood={step.mood}
-      index={index}
-      total={steps.length}
-      targetRect={rect}
-      muted={muted}
-      speaking={speaking}
-      mascotSrc={mascotSrc}
-      onNext={() => (index >= steps.length - 1 ? finish() : void showStep(index + 1))}
-      onPrev={() => index > 0 && void showStep(index - 1)}
-      onSkip={finish}
-      onToggleMute={toggleMute}
-    />,
+    <>
+      {overlay}
+      <TourTooltip
+        title={step.title}
+        body={step.body}
+        mood={step.mood}
+        index={index}
+        total={steps.length}
+        targetRect={rect}
+        muted={muted}
+        speaking={speaking}
+        mascotSrc={mascotSrc}
+        onNext={() => (index >= steps.length - 1 ? finish() : void showStep(index + 1))}
+        onPrev={() => index > 0 && void showStep(index - 1)}
+        onSkip={finish}
+        onToggleMute={toggleMute}
+      />
+    </>,
     document.body
   );
 }

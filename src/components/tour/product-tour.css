@@ -1,39 +1,39 @@
 /* =========================================================================
-   MeoSanSales — Interactive Product Tour styles
-   Works alongside Driver.js (spotlight/overlay) + a custom React tooltip.
-   Brand accent: #FF7A1A
+   MeoSanSales — Interactive Product Tour styles (Driver.js-free)
+   Self-drawn spotlight + custom React tooltip. Brand accent: #FF7A1A
    ========================================================================= */
 
-/* ---- Driver.js overlay & spotlight polish ---- */
-.driver-active-element,
-.driver-active-element:focus {
-  /* soft brand glow around the highlighted element */
-  outline: 3px solid rgba(255, 122, 26, 0.9) !important;
-  outline-offset: 4px;
-  border-radius: 14px !important;
-  transition: outline-color 0.2s ease;
+/* ---- Spotlight overlay ----
+   A transparent rect over the highlighted element with a massive box-shadow
+   that dims everything else. pointer-events:none so it NEVER blocks clicks. */
+.mss-overlay {
+  position: fixed;
+  z-index: 2147483000;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.62);
+  outline: 3px solid rgba(255, 122, 26, 0.9);
+  outline-offset: 0;
+  pointer-events: none;
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
 }
-
-/* We render our own tooltip, so hide Driver's default popover entirely. */
-.driver-popover {
-  display: none !important;
+.mss-overlay-full {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background: rgba(15, 23, 42, 0.62);
 }
 
 /* =========================================================================
-   Custom tooltip card
+   Tooltip card
    ========================================================================= */
-/* Portal host on <html>: clicks pass through except on the tooltip itself. */
-.mss-tour-root {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483646;
-  pointer-events: none;
-}
-
 .mss-tooltip {
   position: fixed;
-  z-index: 2147483647; /* above Driver's overlay stacking context */
-  pointer-events: auto; /* host is none; re-enable on the card so buttons click */
+  z-index: 2147483647; /* above the spotlight overlay */
+  pointer-events: auto;
   box-sizing: border-box;
   padding: 32px 18px 16px;
   background: #ffffff;
@@ -44,7 +44,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* little pointer notch */
+/* pointer notch */
 .mss-tooltip::after {
   content: "";
   position: absolute;
@@ -65,7 +65,7 @@
   border-bottom: 1px solid rgba(255, 122, 26, 0.18);
 }
 
-/* ---- Mascot ---- */
+/* ---- Mascot (raised above the card so it never covers the title) ---- */
 .mss-mascot-wrap {
   position: absolute;
   top: -58px;
@@ -86,7 +86,7 @@
   width: 80px;
   height: 80px;
   object-fit: cover;
-  border-radius: 50%; /* round the orange-background avatar into a clean badge */
+  border-radius: 50%;
   border: 3px solid #fff;
   box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
   background: #fff;
@@ -95,15 +95,15 @@
 .mss-mascot-ring {
   position: absolute;
   bottom: 6px;
-  width: 78px;
-  height: 78px;
+  width: 70px;
+  height: 70px;
   border-radius: 999px;
   background: radial-gradient(circle, rgba(255, 122, 26, 0.35) 0%, rgba(255, 122, 26, 0) 70%);
 }
 
 /* ---- Text ---- */
 .mss-title {
-  margin: 8px 0 6px;
+  margin: 6px 0 6px;
   padding-right: 76px; /* clear the mute button */
   font-size: 17px;
   font-weight: 700;
@@ -206,8 +206,18 @@
   transform: translateY(1px);
 }
 
+/* Every interactive control stays clickable regardless of cascade. */
+.mss-mute,
+.mss-skip,
+.mss-prev,
+.mss-next,
+.mss-dots {
+  pointer-events: auto;
+}
+
 /* ---- Respect reduced-motion preferences ---- */
 @media (prefers-reduced-motion: reduce) {
+  .mss-overlay,
   .mss-tooltip,
   .mss-mascot,
   .mss-mascot-img,
