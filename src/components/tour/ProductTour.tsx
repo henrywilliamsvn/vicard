@@ -15,6 +15,8 @@ export type TourStep = {
   /** Vietnamese tooltip text — this is also what the mascot speaks aloud. */
   body: string;
   mood: MascotMood;
+  /** Per-step mascot expression image. Falls back to /mascot.png if missing. */
+  image?: string;
   /**
    * Optional hook run *before* the step shows — use it to switch tabs so the
    * target element exists (e.g. open the "Ví Thẻ" tab for step 2).
@@ -28,24 +30,28 @@ export const DEFAULT_TOUR_STEPS: TourStep[] = [
     title: "🔎 Start Your Smart Hunting",
     body: "Nhập tên sản phẩm hoặc dán link từ Shopee, Lazada, Tiki vào đây để bắt đầu quét ưu đãi nhé!",
     mood: "wave",
+    image: "/assets/mascot-greeting.png",
   },
   {
     target: "#cashback-comparison-section",
     title: "💳 Optimize Your Credit Cards",
     body: "Hệ thống sẽ gợi ý thẻ có phần trăm hoàn tiền cao nhất. Hãy vào tab 'Ví Thẻ' để chọn những thẻ bạn đang sở hữu nhé!",
     mood: "point",
+    image: "/assets/mascot-thinking.png",
   },
   {
     target: "#bonus-channels-guide",
     title: "🚀 Double or Triple Your Rewards",
     body: "Đừng quên chọn thêm các kênh tích điểm đối tác (như ShopBack, ví điện tử) để chồng thêm nhiều tầng giảm giá cùng lúc.",
     mood: "cheer",
+    image: "/assets/mascot-excited.png",
   },
   {
     target: "#price-alert-trigger",
     title: "🔔 Set Your Target Price",
     body: "Chưa muốn mua ngay? Đặt mức giá bạn mong muốn tại đây. MeoSanSales sẽ thông báo ngay khi giá chạm sàn để bạn vào chốt đơn!",
     mood: "nod",
+    image: "/assets/mascot-winking.png",
   },
 ];
 
@@ -283,7 +289,7 @@ export default function ProductTour({
         targetRect={rect}
         muted={muted}
         speaking={speaking}
-        mascotSrc={mascotSrc}
+        mascotSrc={step.image ?? mascotSrc}
         onNext={() => (index >= steps.length - 1 ? finish() : void showStep(index + 1))}
         onPrev={() => index > 0 && void showStep(index - 1)}
         onSkip={finish}

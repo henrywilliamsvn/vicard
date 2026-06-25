@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
+
+const FALLBACK_SRC = "/mascot.png";
 
 /** The four "moods" the instructor mascot can act out, one per tour step. */
 export type MascotMood = "wave" | "point" | "cheer" | "nod";
@@ -58,6 +61,13 @@ type Props = {
 };
 
 export function TourMascot({ mood, src = "/mascot.png", speaking = false }: Props) {
+  // Try the per-step expression image; fall back to the base mascot if it 404s
+  // (so the tour works before the expression images are generated/uploaded).
+  const [imgSrc, setImgSrc] = useState(src);
+  useEffect(() => {
+    setImgSrc(src);
+  }, [src]);
+
   return (
     <motion.div
       className="mss-mascot"
@@ -75,7 +85,10 @@ export function TourMascot({ mood, src = "/mascot.png", speaking = false }: Prop
         />
       )}
       <motion.img
-        src={src}
+        src={imgSrc}
+        onError={() => {
+          if (imgSrc !== FALLBACK_SRC) setImgSrc(FALLBACK_SRC);
+        }}
         alt="Meo — trợ lý mua sắm MeoSanSales"
         className="mss-mascot-img"
         style={{ transformOrigin: MOOD_ORIGIN[mood] }}
