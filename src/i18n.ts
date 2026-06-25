@@ -106,6 +106,8 @@ const DICT = {
   newCardsNote: { en: "New cards start with statement day 1 and due day 15 — adjust each card's dates in your wallet above. Privacy-first: no bank login; everything stays on this device.", vi: "Thẻ mới mặc định ngày sao kê 1 và ngày đến hạn 15 — chỉnh lại trong ví ở trên. Bảo mật trước tiên: không cần đăng nhập ngân hàng; mọi dữ liệu nằm trên thiết bị này." },
   applyAffiliate: { en: "\"Apply\" links are affiliate links — we may earn a commission at no extra cost to you. We rank cards by what's best for you, never by what pays us.", vi: "Liên kết \"Mở thẻ\" là liên kết tiếp thị — chúng tôi có thể nhận hoa hồng mà bạn không tốn thêm phí. Thẻ luôn được xếp theo lợi ích của bạn, không theo hoa hồng." },
   footer: { en: "Reminders only fire while the app is open in your browser. Rates are a June 2026 draft and change often - confirm with your bank. Not financial advice.", vi: "Nhắc nhở chỉ hoạt động khi ứng dụng đang mở. Mức hoàn tiền là bản tháng 6/2026 và thay đổi thường xuyên - hãy kiểm tra với ngân hàng. Không phải tư vấn tài chính." },
+  privacyLink: { en: "Privacy Policy", vi: "Chính sách bảo mật" },
+  disclosureLink: { en: "Affiliate Disclosure", vi: "Công bố tiếp thị liên kết" },
 
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
