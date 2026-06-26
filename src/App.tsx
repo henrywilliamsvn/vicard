@@ -10,7 +10,7 @@ import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
-import { cardApplyLink, hasAnyAffiliate, rewardLink } from "./links";
+import { cardApplyLink, hasCardAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
 import DealsTab from "./components/DealsTab";
@@ -314,7 +314,7 @@ export default function App() {
           {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
         </button>
         <p className="text-xs text-slate-400">{t(lang, "newCardsNote")}</p>
-        {hasAnyAffiliate() && (
+        {hasCardAffiliate() && (
           <p className="text-[11px] text-slate-400 leading-snug">{t(lang, "applyAffiliate")}</p>
         )}
       </div>

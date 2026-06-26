@@ -66,24 +66,70 @@ export const AFFILIATE: AffiliateConfig = {
   cardApplyFallback: undefined,
 };
 
+// Official credit-card pages, keyed by `bank` in cards.ts. These are the
+// honest, always-working fallback for "Apply" when no affiliate link is set yet
+// — the user still gets to the right place to open the card. When you add an
+// affiliate apply link (cardApplyUrls / cardApplyFallback) it takes priority and
+// the button starts earning, with zero other changes. Verified June 26, 2026.
+export const BANK_APPLY_PAGES: Record<string, string> = {
+  VPBank: "https://www.vpbank.com.vn/ca-nhan/the-tin-dung",
+  "Cake (VPBank)": "https://cake.vn/credit-card",
+  "Cake (VPBank) / Be": "https://cake.vn/credit-card",
+  VIB: "https://www.vib.com.vn/vn/the-tin-dung",
+  UOB: "https://www.uob.com.vn/personal/cards/index.page",
+  OCB: "https://ocb.com.vn/vi/ca-nhan/the",
+  VietinBank: "https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/danh-sach-the",
+  Vietcombank: "https://www.vietcombank.com.vn/en/Personal/SPDV/The",
+  Techcombank: "https://techcombank.com/en/personal/spend/cards/credit-card",
+  TPBank: "https://tpb.vn/khach-hang-ca-nhan/the-tin-dung",
+  Shinhan: "https://shinhan.com.vn/vi/credit-card-application",
+  Sacombank: "https://www.sacombank.com.vn/en/personal/cards/credit-cards.html",
+  HSBC: "https://www.hsbc.com.vn/en-vn/credit-cards/products/",
+  ACB: "https://acb.com.vn/en/personal-cards/credit-card",
+  "Standard Chartered": "https://www.sc.com/vn/credit-cards/",
+  SeABank: "https://seaoffers.seabank.com.vn/the-tin-dung/",
+  "MB Bank": "https://www.mbbank.com.vn/26/46/213/san-pham-all/the-tin-dung",
+  "Home Credit": "https://www.homecredit.vn/the-tin-dung-online",
+  HDBank: "https://hdbank.com.vn/personal/product/the/the-tin-dung",
+  BIDV: "https://www.bidv.com.vn/uudaithe/",
+  // MSB, Eximbank, KBank: no official card URL confirmed → they fall back to the
+  // Google-search safety net in cardApplyLink() (always lands on the bank's card page).
+};
+
 // Referral URL for a reward source (falls back to the plain public URL).
 export function rewardLink(name: string, fallbackUrl: string): string {
   return AFFILIATE.referralUrls[name] ?? fallbackUrl;
 }
 
-// Affiliate "apply" URL for a card's bank, or undefined if none configured.
-export function cardApplyLink(bank: string): string | undefined {
-  return AFFILIATE.cardApplyUrls[bank] ?? AFFILIATE.cardApplyFallback;
+// "Apply for this card" URL for a bank. Priority:
+//   1. affiliate link (cardApplyUrls / cardApplyFallback) — EARNS
+//   2. the bank's official credit-card page — honest, always works
+//   3. a Google search for the bank's card — last-resort safety net
+// Never returns undefined, so the Apply button always has somewhere to go.
+export function cardApplyLink(bank: string): string {
+  const affiliate = AFFILIATE.cardApplyUrls[bank] ?? AFFILIATE.cardApplyFallback;
+  if (affiliate) return affiliate;
+  return (
+    BANK_APPLY_PAGES[bank] ??
+    `https://www.google.com/search?q=${encodeURIComponent(bank + " thẻ tín dụng đăng ký")}`
+  );
+}
+
+// True when a card "Apply" link actually EARNS (affiliate apply link set).
+// Used to gate the apply-commission disclosure so we only claim affiliate when
+// it's true — the official-page fallbacks above are NOT affiliate links.
+export function hasCardAffiliate(): boolean {
+  return (
+    Object.values(AFFILIATE.cardApplyUrls).some(Boolean) ||
+    Boolean(AFFILIATE.cardApplyFallback)
+  );
 }
 
 // True once ANY affiliate/referral link is live — used to decide whether to
 // show the commission disclosure (we only disclose when it's actually true).
 export function hasAnyAffiliate(): boolean {
   const hasReferral = Object.values(AFFILIATE.referralUrls).some(Boolean);
-  const hasCard =
-    Object.values(AFFILIATE.cardApplyUrls).some(Boolean) ||
-    Boolean(AFFILIATE.cardApplyFallback);
-  return hasReferral || hasCard;
+  return hasReferral || hasCardAffiliate();
 }
 
 // =============================================================================
