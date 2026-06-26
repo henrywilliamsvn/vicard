@@ -46,6 +46,14 @@ export const AFFILIATE: AffiliateConfig = {
     ZaloPay: "https://onelink.zalopay.vn/cross-border-referral?referral_code=8HA3KVUN",
     Klook: "https://s.klook.com/c/l3PZWW0j3V",
     Traveloka: "https://shorten.asia/1cg6CF37",
+    // Involve Asia campaigns (property approved June 26). Paste each deeplink
+    // here once generated in IA → the source starts earning. Until then the app
+    // falls back to the plain public URL in rewardSources.ts (still works).
+    AliExpress: "https://invl.me/clnkyr2", // IA — AliExpress (Global) CPS
+    Taobao: "https://invl.me/clnkyqo",     // IA — Taobao CPS
+    Alibaba: "https://invl.me/clnkyr5",    // IA — Alibaba CPS
+    Banggood: "https://invl.me/clnkyr9",   // IA — Banggood (Global)
+    KKday: "https://invl.me/clnkyrd",      // IA — KKday Global CPS
   },
 
   cardApplyUrls: {

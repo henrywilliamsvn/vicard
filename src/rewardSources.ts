@@ -135,6 +135,56 @@ export const REWARD_SOURCES: RewardSource[] = [
     setup: "Open Traveloka, compare flight/hotel prices, grab in-app promos, and pay with your best travel card.",
     setupUrl: "https://www.traveloka.com/vi-vn",
   },
+
+  // ---- Involve Asia cross-border + travel campaigns (June 26) --------------
+  // Links live in links.ts referralUrls, keyed by these `name`s. Until Henry
+  // pastes the IA deeplinks they fall back to the public `url` below (app stays
+  // working + honest). All are deeplinkable web landings → earn on desktop+mobile.
+  {
+    name: "AliExpress",
+    layer: "portal",
+    categories: ["foreign", "online"],
+    note: "Hàng quốc tế giá rẻ — đặt qua đây để cộng thêm hoàn tiền cho đơn xuyên biên giới.",
+    url: "https://www.aliexpress.com",
+    setup: "Mở AliExpress qua link này trước khi mua để đơn được ghi nhận hoàn tiền.",
+    setupUrl: "https://www.aliexpress.com",
+  },
+  {
+    name: "Taobao",
+    layer: "portal",
+    categories: ["foreign", "online"],
+    note: "Săn hàng Trung Quốc tận gốc — hoàn tiền cao cho đơn xuyên biên giới.",
+    url: "https://www.taobao.com",
+    setup: "Mở Taobao qua link này trước khi mua để được ghi nhận hoàn tiền.",
+    setupUrl: "https://www.taobao.com",
+  },
+  {
+    name: "Alibaba",
+    layer: "portal",
+    categories: ["foreign", "online"],
+    note: "Mua sỉ / nhập hàng quốc tế — hoàn tiền cho đơn B2B xuyên biên giới.",
+    url: "https://www.alibaba.com",
+    setup: "Mở Alibaba qua link này trước khi đặt để đơn được ghi nhận.",
+    setupUrl: "https://www.alibaba.com",
+  },
+  {
+    name: "Banggood",
+    layer: "portal",
+    categories: ["foreign", "online"],
+    note: "Đồ điện tử & gadget quốc tế — hoàn tiền tốt cho đơn xuyên biên giới.",
+    url: "https://www.banggood.com",
+    setup: "Mở Banggood qua link này trước khi mua để được ghi nhận hoàn tiền.",
+    setupUrl: "https://www.banggood.com",
+  },
+  {
+    name: "KKday",
+    layer: "voucher",
+    categories: ["travel", "entertainment"],
+    note: "Vé tham quan, tour & trải nghiệm du lịch — thường rẻ hơn mua tại quầy.",
+    url: "https://www.kkday.com/vi",
+    setup: "Mở KKday trước khi đặt tour/vé tham quan và thanh toán bằng thẻ du lịch tốt nhất.",
+    setupUrl: "https://www.kkday.com/vi",
+  },
 ];
 
 export function sourcesFor(category: SpendCategory): RewardSource[] {
