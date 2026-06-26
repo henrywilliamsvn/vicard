@@ -53,6 +53,15 @@ export const SAMPLE_DEALS: Deal[] = [
     expires: "Hằng ngày",
   },
   {
+    id: "shopee-online",
+    merchant: "Shopee",
+    title: "Voucher, freeship & flash sale mỗi ngày trên Shopee",
+    category: "online",
+    discountPct: 30,
+    url: "https://shopee.vn/",
+    expires: "Hằng ngày",
+  },
+  {
     id: "traveloka-travel",
     merchant: "Traveloka",
     title: "Vé máy bay + khách sạn ưu đãi trên Traveloka",

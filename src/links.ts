@@ -39,9 +39,10 @@ export const AFFILIATE: AffiliateConfig = {
     "Lazada vouchers / LazWallet": undefined,
     "TikTok Shop": "https://shorten.asia/4a5fHmSn",
     Tiki: "https://shorten.asia/6k7T9nqN",
-    // Shopee + Lazada VN: join requests PENDING approval on AccessTrade (gated). Paste links here once approved.
-    Shopee: undefined,
-    Lazada: undefined,
+    // Shopee VN via Adpia (approved June 26) — redirects to shopee.vn with tracking.
+    Shopee: "https://adpvn.top/s/4kZLA",
+    Lazada: undefined, // pending — add the Adpia Lazada deeplink here when generated
+
     MoMo: "https://onelink.momo.vn/WZPv/MsyZKIuN?utm_source=referral_others",
     ZaloPay: "https://onelink.zalopay.vn/cross-border-referral?referral_code=8HA3KVUN",
     Klook: "https://s.klook.com/c/l3PZWW0j3V",
