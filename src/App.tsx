@@ -15,6 +15,7 @@ import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
 import MoneyInput from "./components/MoneyInput";
 import InstallPrompt from "./components/InstallPrompt";
+import CookieConsent from "./components/CookieConsent";
 import DealsTab from "./components/DealsTab";
 import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
@@ -363,6 +364,7 @@ export default function App() {
       </header>
 
       <InstallPrompt lang={lang} />
+      <CookieConsent lang={lang} />
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
         <div className="flex gap-1 bg-slate-100 rounded-full p-1">
@@ -587,6 +589,10 @@ export default function App() {
             <a href="/privacy.html" className="underline hover:text-slate-600">{t(lang, "privacyLink")}</a>
             <span className="mx-2">·</span>
             <a href="/affiliate-disclosure.html" className="underline hover:text-slate-600">{t(lang, "disclosureLink")}</a>
+          </div>
+          <div className="pt-3 text-slate-500">
+            {t(lang, "supportTitle")}{" "}
+            <a href="mailto:support@meosansales.com" className="text-brand underline hover:text-brand-dark">support@meosansales.com</a>
           </div>
         </footer>
       </main>

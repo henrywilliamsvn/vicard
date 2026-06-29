@@ -109,6 +109,21 @@ const DICT = {
   privacyLink: { en: "Privacy Policy", vi: "Chính sách bảo mật" },
   disclosureLink: { en: "Affiliate Disclosure", vi: "Công bố tiếp thị liên kết" },
 
+  // Trust & support
+  noSell: {
+    en: "🔒 We track your shopping trips to secure your cashback — we never sell your personal data to third parties.",
+    vi: "🔒 Chúng tôi chỉ theo dõi lượt mua sắm để đảm bảo hoàn tiền cho bạn — không bao giờ bán dữ liệu cá nhân của bạn cho bên thứ ba.",
+  },
+  supportTitle: { en: "Need help? We're a real team.", vi: "Cần hỗ trợ? Đội ngũ thật của chúng tôi luôn sẵn sàng." },
+  supportEmail: { en: "Email support", vi: "Gửi email hỗ trợ" },
+  cookieText: {
+    en: "🍪 We use on-device storage to run the app and tracking links to secure your cashback. We never sell your data.",
+    vi: "🍪 Chúng tôi dùng bộ nhớ trên thiết bị để chạy ứng dụng và liên kết theo dõi để đảm bảo hoàn tiền cho bạn. Chúng tôi không bao giờ bán dữ liệu của bạn.",
+  },
+  cookieAccept: { en: "Accept all", vi: "Đồng ý tất cả" },
+  cookieEssential: { en: "Essential only", vi: "Chỉ cần thiết" },
+  cookieMore: { en: "Learn more", vi: "Tìm hiểu thêm" },
+
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },
