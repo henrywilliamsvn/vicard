@@ -18,26 +18,28 @@ export default function AccountBar() {
     return <span className="text-xs text-brand-light/80">Guest mode</span>;
   }
 
-  const premiumToggle = (
+  // Only shown to subscribers (to exit the demo); free users upgrade via the
+  // Premium card in the feed, keeping the header uncluttered.
+  const premiumToggle = isPremium ? (
     <button
-      onClick={() => setPremium(!isPremium)}
-      className="bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
-      title="Demo only — toggles the subscriber view"
+      onClick={() => setPremium(false)}
+      className="bg-white/25 rounded-full px-3 py-1.5 whitespace-nowrap"
+      title="Demo only — exit the subscriber view"
     >
-      {isPremium ? (lang === "vi" ? "Premium ✓" : "Premium ✓") : lang === "vi" ? "Thử Premium" : "Try Premium"}
+      Premium ✓
     </button>
-  );
+  ) : null;
 
   if (session) {
     return (
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-brand-light/90 hidden sm:inline">{session.user.email}</span>
+      <div className="flex items-center gap-1.5 text-xs">
+        <span className="text-brand-light/90 hidden sm:inline max-w-[120px] truncate">{session.user.email}</span>
         {premiumToggle}
         <button
           onClick={() => signOut()}
-          className="bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
+          className="bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5 whitespace-nowrap"
         >
-          Sign out
+          {lang === "vi" ? "Đăng xuất" : "Sign out"}
         </button>
       </div>
     );
@@ -58,13 +60,13 @@ export default function AccountBar() {
   }
 
   return (
-    <div className="relative flex items-center gap-2 text-xs">
+    <div className="relative flex items-center gap-1.5 text-xs">
       {premiumToggle}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
+        className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5 whitespace-nowrap"
       >
-        Sign in / Sign up
+        {lang === "vi" ? "Đăng nhập" : "Sign in"}
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-64 bg-white text-slate-700 rounded-xl shadow-lg border border-slate-100 p-3 z-10 space-y-2">
