@@ -8,6 +8,8 @@ import { catLabel, type Lang } from "./i18n";
 import MoneyInput from "./components/MoneyInput";
 import StoreDiscovery from "./components/StoreDiscovery";
 import LoyaltyPreview from "./components/LoyaltyPreview";
+import PremiumUpsell from "./components/PremiumUpsell";
+import DealCard from "./components/DealCard";
 import { usePremium } from "./lib/premium";
 
 interface Props {
@@ -147,9 +149,18 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         </div>
       )}
-      {isPremium && <LoyaltyPreview lang={lang} />}
+      {isPremium ? <LoyaltyPreview lang={lang} /> : <PremiumUpsell lang={lang} />}
 
       <StoreDiscovery lang={lang} />
+
+      <section>
+        <h2 className="text-base font-bold mb-2">{L(lang, "💸 Deals for you", "💸 Deal cho bạn")}</h2>
+        <div className="space-y-3">
+          {deals.slice(0, 6).map((d) => (
+            <DealCard key={d.id} deal={d} lang={lang} />
+          ))}
+        </div>
+      </section>
 
       <div>
         <h2 className="text-xl font-bold mb-1">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>

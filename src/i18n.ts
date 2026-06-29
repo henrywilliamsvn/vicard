@@ -159,12 +159,14 @@ const DICT = {
   discUpTo: { en: "up to {n}%", vi: "tới {n}%" },
   discFlash: { en: "⚡ Flash deals", vi: "⚡ Ưu đãi chớp nhoáng" },
   discYourStores: { en: "Your stores", vi: "Cửa hàng của bạn" },
+  dealOpen: { en: "Open & earn cashback →", vi: "Mở & Hoàn tiền →" },
+  dealsForYou: { en: "💸 Deals for you", vi: "💸 Deal cho bạn" },
 
   // Loyalty preview (non-live)
   loyPreview: { en: "Preview", vi: "Bản xem trước" },
   loySoon: { en: "Coming soon", vi: "Sắp ra mắt" },
   loyTier: { en: "Your tier", vi: "Hạng của bạn" },
-  loyTierProg: { en: "80% to Mèo Vàng", vi: "80% lên Mèo Vàng" },
+  loyTierProg: { en: "220 Xu more → Mèo Vàng", vi: "Còn 220 Xu nữa → Mèo Vàng" },
   loyWallet: { en: "Cashback wallet", vi: "Ví hoàn tiền" },
   loyMissions: { en: "🎯 Today's missions", vi: "🎯 Nhiệm vụ hôm nay" },
   loyM1: { en: "Open 1 deal · +20 Xu", vi: "Mở 1 deal · +20 Xu" },
@@ -174,6 +176,15 @@ const DICT = {
     en: "Tiers, Xu Meo & cashback wallet are in development — this is a design preview.",
     vi: "Tích lũy hạng, Xu Meo & ví hoàn tiền đang được phát triển — đây là bản xem trước.",
   },
+
+  // Premium upsell (shown to free users)
+  upsellTitle: { en: "Go Premium — earn more on every order", vi: "Nâng cấp Premium — kiếm nhiều hơn mỗi đơn" },
+  upsellB1: { en: "🏆 Climb tiers: Mèo Đồng → Kim Cương", vi: "🏆 Tích lũy hạng: Mèo Đồng → Kim Cương" },
+  upsellB2: { en: "🎯 Missions & Xu Meo rewards", vi: "🎯 Nhiệm vụ & Xu Meo — đổi thưởng" },
+  upsellB3: { en: "💸 Higher cashback at higher tiers", vi: "💸 Hoàn tiền cao hơn ở hạng cao" },
+  upsellB4: { en: "👛 Cashback wallet · MoMo/VietQR payouts", vi: "👛 Ví hoàn tiền · rút về MoMo/VietQR" },
+  upsellCta: { en: "Try Premium", vi: "Thử Premium" },
+  upsellNote: { en: "Coming soon — free to try.", vi: "Sắp ra mắt — dùng thử miễn phí." },
 
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
