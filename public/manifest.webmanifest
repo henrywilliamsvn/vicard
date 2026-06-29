@@ -1,12 +1,12 @@
 {
-  "name": "Ví Thẻ — Card Manager",
-  "short_name": "Ví Thẻ",
-  "description": "Which card to swipe, and when to pay. Vietnam cashback card optimizer.",
+  "name": "Mẹo săn sales",
+  "short_name": "Mẹo săn sales",
+  "description": "Trợ lý săn deal của bạn: quẹt thẻ hoàn tiền cao nhất, ghép khuyến mãi nhiều tầng. Để Meo lo!",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0E7C5A",
+  "theme_color": "#FF7A1A",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
