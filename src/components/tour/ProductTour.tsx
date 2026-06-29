@@ -119,6 +119,7 @@ export default function ProductTour({
   const [speaking, setSpeaking] = useState(false);
 
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
   const indexRef = useRef(index);
@@ -137,8 +138,39 @@ export default function ProductTour({
     return () => synth.removeEventListener?.("voiceschanged", load);
   }, []);
 
-  /* ---- Speech ---- */
-  function speak(text: string, force: boolean) {
+  /* ---- Voice: prefer pre-generated ElevenLabs "Adam" clips, fall back to browser TTS ---- */
+  // Clips live at /tour-audio/step-<i>.mp3 — generate them with scripts/generate-tour-audio.mjs.
+  const TOUR_AUDIO_BASE = "/tour-audio";
+
+  function stopAudio() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+  }
+
+  function speak(text: string, force: boolean, stepIndex?: number) {
+    if (mutedRef.current && !force) return;
+    window.speechSynthesis?.cancel();
+    stopAudio();
+    // Try the Adam clip for this step; if it's missing/blocked, use browser TTS.
+    if (stepIndex != null) {
+      const a = new Audio(`${TOUR_AUDIO_BASE}/step-${stepIndex}.mp3`);
+      audioRef.current = a;
+      a.onplay = () => setSpeaking(true);
+      a.onended = () => setSpeaking(false);
+      const fallback = () => {
+        if (audioRef.current === a) audioRef.current = null;
+        ttsSpeak(text, force);
+      };
+      a.onerror = fallback;
+      a.play().catch(fallback);
+      return;
+    }
+    ttsSpeak(text, force);
+  }
+
+  function ttsSpeak(text: string, force: boolean) {
     const synth = window.speechSynthesis;
     if (!synth) return;
     if (mutedRef.current && !force) return;
@@ -186,7 +218,7 @@ export default function ProductTour({
     // so speak the current step on the first interaction (covers step 1's audio).
     const prime = () => {
       const s = steps[indexRef.current];
-      if (s) speak(s.body, true);
+      if (s) speak(s.body, true, indexRef.current);
     };
     primeRef.current = prime;
     window.addEventListener("pointerdown", prime, { once: true });
@@ -198,6 +230,7 @@ export default function ProductTour({
       window.removeEventListener("pointerdown", primeRef.current);
       primeRef.current = null;
     }
+    stopAudio();
     window.speechSynthesis?.cancel();
     setSpeaking(false);
     setActive(false);
@@ -215,7 +248,7 @@ export default function ProductTour({
   useEffect(() => {
     if (!active) return;
     const step = steps[index];
-    if (step) speak(step.body, false);
+    if (step) speak(step.body, false, index);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, index]);
 
@@ -239,6 +272,7 @@ export default function ProductTour({
   /* ---- Cleanup on unmount ---- */
   useEffect(() => {
     return () => {
+      stopAudio();
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -248,11 +282,12 @@ export default function ProductTour({
       const next = !prev;
       mutedRef.current = next;
       if (next) {
+        stopAudio();
         window.speechSynthesis?.cancel();
         setSpeaking(false);
       } else {
         const step = steps[index];
-        if (step) speak(step.body, true); // re-read the current step on unmute
+        if (step) speak(step.body, true, index); // re-read the current step on unmute
       }
       return next;
     });
