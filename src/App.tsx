@@ -13,6 +13,8 @@ import { sourcesFor } from "./rewardSources";
 import { cardApplyLink, hasCardAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
+import MoneyInput from "./components/MoneyInput";
+import InstallPrompt from "./components/InstallPrompt";
 import DealsTab from "./components/DealsTab";
 import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
@@ -59,7 +61,7 @@ function load<T>(key: string, fallback: T): T {
 }
 
 function formatVND(n: number): string {
-  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "d";
+  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
 }
 function midnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -343,9 +345,12 @@ export default function App() {
       />
       <header className="bg-brand text-white">
         <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Ví Thẻ</h1>
-            <p className="text-brand-light/90 text-sm">{t(lang, "tagline")}</p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src="/mascot.png" alt="Meo" className="w-10 h-10 rounded-full bg-white/20 object-cover shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold leading-none truncate">Mẹo săn sales</h1>
+              <p className="text-brand-light/90 text-xs sm:text-sm mt-1 truncate">{t(lang, "tagline")}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {langBtn}
@@ -356,6 +361,8 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      <InstallPrompt lang={lang} />
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
         <div className="flex gap-1 bg-slate-100 rounded-full p-1">
@@ -443,10 +450,10 @@ export default function App() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-sm flex-1">
+                <div className="block text-sm flex-1">
                   <span className="text-slate-600">{t(lang, "amount")}</span>
-                  <input type="number" min={0} step={10000} value={logAmount || ""} onChange={(e) => setLogAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-                </label>
+                  <MoneyInput value={logAmount} onChange={setLogAmount} lang={lang} />
+                </div>
               </div>
               {logAmount > 0 && (() => {
                 const rec = bestCardFor(logCat, ownedStates);

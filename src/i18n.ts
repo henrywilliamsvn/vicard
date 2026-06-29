@@ -33,7 +33,7 @@ export function useLang(): [Lang, (l: Lang) => void] {
 type Entry = { en: string; vi: string };
 
 const DICT = {
-  tagline: { en: "Which card to swipe, and when to pay.", vi: "Dùng thẻ nào, và khi nào cần trả." },
+  tagline: { en: "Which card to swipe, which deal to grab.", vi: "Quẹt thẻ nào, săn deal đâu — để Meo lo!" },
   remindersOn: { en: "Reminders on", vi: "Đã bật nhắc" },
   enableReminders: { en: "Enable reminders", vi: "Bật nhắc nhở" },
 
@@ -93,7 +93,7 @@ const DICT = {
   maxCashback: { en: "Max cashback", vi: "Hoàn tiền tối đa" },
   noCardsYet: { en: "No cards yet.", vi: "Chưa có thẻ nào." },
 
-  welcomeTitle: { en: "👋 Welcome to Ví Thẻ", vi: "👋 Chào mừng đến Ví Thẻ" },
+  welcomeTitle: { en: "👋 Welcome to Mẹo săn sales", vi: "👋 Chào mừng đến Mẹo săn sales" },
   welcomeBody: { en: "Add the cards you own and we'll tell you which one to swipe for the most cashback — and when each bill is due. Start below.", vi: "Thêm các thẻ bạn có, chúng tôi sẽ mách bạn nên quẹt thẻ nào để hoàn tiền nhiều nhất — và khi nào tới hạn thanh toán. Bắt đầu bên dưới." },
   confirmRemove: { en: "Remove {card} from your wallet? Its dates and cashback settings will be lost.", vi: "Xoá {card} khỏi ví? Ngày tháng và thiết lập hoàn tiền của thẻ sẽ mất." },
 

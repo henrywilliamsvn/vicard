@@ -5,6 +5,7 @@ import { cardApplyLink, rewardLink } from "./links";
 import { getDeals } from "./deals";
 import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
+import MoneyInput from "./components/MoneyInput";
 
 interface Props {
   ownedStates: OwnedCardState[];
@@ -132,6 +133,16 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
 
   return (
     <div className="space-y-6">
+      {!hasCards && (
+        <div className="rounded-xl bg-brand-light border border-brand/20 p-4 flex items-start gap-3">
+          <img src="/mascot.png" alt="Meo" className="w-12 h-12 rounded-full object-cover shrink-0" />
+          <div className="min-w-0">
+            <div className="font-semibold text-brand-dark">{L(lang, "Let Meo handle it 🐱", "Để Meo lo 🐱")}</div>
+            <p className="text-sm text-slate-600 mt-0.5">{L(lang, "Pick a category or paste a product link — Meo shows the best cashback card and how to stack deals. Add your cards for your exact savings.", "Chọn danh mục hoặc dán link sản phẩm — Meo chỉ thẻ hoàn tiền cao nhất và cách ghép ưu đãi. Thêm thẻ của bạn để tính đúng số tiền tiết kiệm.")}</p>
+            <button onClick={onAddCards} className="mt-2 text-sm bg-brand text-white rounded-lg px-3 py-1.5 font-medium hover:bg-brand-dark">{L(lang, "➕ Add your cards", "➕ Thêm thẻ của bạn")}</button>
+          </div>
+        </div>
+      )}
       <div>
         <h2 className="text-xl font-bold mb-1">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>
         <p className="text-sm text-slate-500">{L(lang, "Pick a category or paste a link — we'll show the best card and how to pay.", "Chọn danh mục hoặc dán liên kết — chúng tôi chỉ thẻ tốt nhất và cách trả.")}</p>
@@ -157,10 +168,10 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         )}
       </div>
 
-      <label className="block text-sm">
+      <div className="text-sm">
         <span className="text-slate-600">{L(lang, "How much? (optional)", "Bao nhiêu? (tuỳ chọn)")}</span>
-        <input type="number" min={0} step={10000} value={amount || ""} onChange={(e) => setAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" placeholder="0đ" />
-      </label>
+        <MoneyInput value={amount} onChange={setAmount} lang={lang} />
+      </div>
 
       <div id="price-alert-trigger" className="flex items-end gap-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
         <label className="block text-sm flex-1">
