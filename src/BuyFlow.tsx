@@ -8,6 +8,7 @@ import { catLabel, type Lang } from "./i18n";
 import MoneyInput from "./components/MoneyInput";
 import StoreDiscovery from "./components/StoreDiscovery";
 import LoyaltyPreview from "./components/LoyaltyPreview";
+import { usePremium } from "./lib/premium";
 
 interface Props {
   ownedStates: OwnedCardState[];
@@ -62,6 +63,7 @@ function detectMerchant(q: string, lang: Lang): { merchant: string; category: Sp
 }
 
 export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
+  const [isPremium] = usePremium();
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
   const [query, setQuery] = useState<string>("");
@@ -145,7 +147,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         </div>
       )}
-      <LoyaltyPreview lang={lang} />
+      {isPremium && <LoyaltyPreview lang={lang} />}
 
       <StoreDiscovery lang={lang} />
 
