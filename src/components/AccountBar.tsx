@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useLang, t } from "../i18n";
+import { usePremium } from "../lib/premium";
 
 export default function AccountBar() {
   const { enabled, session, signIn, signUp, signOut } = useAuth();
   const [lang] = useLang();
+  const [isPremium, setPremium] = usePremium();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -16,10 +18,21 @@ export default function AccountBar() {
     return <span className="text-xs text-brand-light/80">Guest mode</span>;
   }
 
+  const premiumToggle = (
+    <button
+      onClick={() => setPremium(!isPremium)}
+      className="bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
+      title="Demo only — toggles the subscriber view"
+    >
+      {isPremium ? (lang === "vi" ? "Premium ✓" : "Premium ✓") : lang === "vi" ? "Thử Premium" : "Try Premium"}
+    </button>
+  );
+
   if (session) {
     return (
       <div className="flex items-center gap-2 text-xs">
         <span className="text-brand-light/90 hidden sm:inline">{session.user.email}</span>
+        {premiumToggle}
         <button
           onClick={() => signOut()}
           className="bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
@@ -45,7 +58,8 @@ export default function AccountBar() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-2 text-xs">
+      {premiumToggle}
       <button
         onClick={() => setOpen((o) => !o)}
         className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5"
