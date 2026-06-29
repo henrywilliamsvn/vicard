@@ -18,6 +18,8 @@ import InstallPrompt from "./components/InstallPrompt";
 import CookieConsent from "./components/CookieConsent";
 import ShoppingTripInterstitial from "./components/ShoppingTripInterstitial";
 import ShoppingTrips from "./components/ShoppingTrips";
+// CashOutCard (payout preview) intentionally NOT mounted yet — saved for the
+// post-launch payout stage. See Outbox/MeoSanSales-Payout-Architecture-and-Compliance-Plan.
 import DealsTab from "./components/DealsTab";
 import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
@@ -337,7 +339,7 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20">
       <ProductTour
         run={runTour}
         steps={tourSteps}
@@ -355,10 +357,15 @@ export default function App() {
               <p className="text-brand-light/90 text-xs sm:text-sm mt-1 truncate">{t(lang, "tagline")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {langBtn}
-            <button onClick={enableReminders} className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5">
-              {notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+            <button
+              onClick={enableReminders}
+              aria-label={notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+              title={notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+              className="bg-white/15 hover:bg-white/25 rounded-full w-8 h-8 flex items-center justify-center text-sm"
+            >
+              {notifyOn ? "🔔" : "🔕"}
             </button>
             <AccountBar />
           </div>
@@ -369,23 +376,6 @@ export default function App() {
       <CookieConsent lang={lang} />
       <ShoppingTripInterstitial lang={lang} />
       <ShoppingTrips lang={lang} />
-
-      <div className="max-w-2xl mx-auto px-5 pt-4">
-        <div className="flex gap-1 bg-slate-100 rounded-full p-1">
-          <button onClick={() => setTab("buy")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "buy" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {lang === "vi" ? "Mua gì?" : "Buy"}
-          </button>
-          <button onClick={() => setTab("wallet")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabWallet")}
-          </button>
-          <button onClick={() => setTab("rewards")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabRewards")}
-          </button>
-          <button onClick={() => setTab("deals")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "deals" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabDeals")}
-          </button>
-        </div>
-      </div>
 
       {tab === "buy" ? (
         <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} /></main>
@@ -601,6 +591,26 @@ export default function App() {
         </footer>
       </main>
       )}
+
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-100">
+        <div className="max-w-2xl mx-auto flex">
+          {([
+            ["buy", "🏠", lang === "vi" ? "Mua gì?" : "Buy"],
+            ["wallet", "👛", t(lang, "tabWallet")],
+            ["rewards", "🎯", t(lang, "tabRewards")],
+            ["deals", "🏷️", t(lang, "tabDeals")],
+          ] as const).map(([key, icon, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={"flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition " + (tab === key ? "text-brand" : "text-slate-400")}
+            >
+              <span className="text-lg leading-none">{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
