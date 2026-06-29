@@ -6,6 +6,7 @@ import { getDeals } from "./deals";
 import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
 import MoneyInput from "./components/MoneyInput";
+import StoreDiscovery from "./components/StoreDiscovery";
 
 interface Props {
   ownedStates: OwnedCardState[];
@@ -143,6 +144,8 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         </div>
       )}
+      <StoreDiscovery lang={lang} />
+
       <div>
         <h2 className="text-xl font-bold mb-1">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>
         <p className="text-sm text-slate-500">{L(lang, "Pick a category or paste a link — we'll show the best card and how to pay.", "Chọn danh mục hoặc dán liên kết — chúng tôi chỉ thẻ tốt nhất và cách trả.")}</p>

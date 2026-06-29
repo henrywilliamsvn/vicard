@@ -139,6 +139,27 @@ const DICT = {
   },
   tripsClear: { en: "Clear", vi: "Xoá" },
 
+  // Cash-out (non-live preview)
+  cashOutTitle: { en: "Cash out your cashback", vi: "Rút tiền hoàn lại" },
+  cashOutSoon: { en: "Coming soon", vi: "Sắp ra mắt" },
+  cashOutAvail: { en: "Available to withdraw", vi: "Có thể rút" },
+  cashOutThreshold: { en: "Min. withdrawal", vi: "Mức rút tối thiểu" },
+  cashOutProgress: { en: "{pct}% to your first cash-out", vi: "{pct}% đến lần rút đầu tiên" },
+  cashOutPending: { en: "Pending", vi: "Đang chờ xác nhận" },
+  cashOutFast: { en: "⚡ Fast-Track: get paid in 14 days (premium)", vi: "⚡ Rút nhanh: nhận tiền trong 14 ngày (gói cao cấp)" },
+  cashOutMethods: { en: "Planned: MoMo · ZaloPay · bank transfer · gift cards", vi: "Dự kiến: MoMo · ZaloPay · chuyển khoản · thẻ quà tặng" },
+  cashOutNote: {
+    en: "Preview only — withdrawals aren't live yet. The balance shown is illustrative.",
+    vi: "Chỉ là bản xem trước — tính năng rút tiền chưa hoạt động. Số dư chỉ mang tính minh hoạ.",
+  },
+
+  // Store discovery (search + personalised feed)
+  discPlaceholder: { en: "Search stores (Shopee, Tiki, MoMo…)", vi: "Tìm cửa hàng (Shopee, Tiki, MoMo…)" },
+  discNoResults: { en: "No stores match — try a shorter name.", vi: "Không tìm thấy cửa hàng — thử tên ngắn hơn." },
+  discUpTo: { en: "up to {n}%", vi: "tới {n}%" },
+  discFlash: { en: "⚡ Flash deals", vi: "⚡ Ưu đãi chớp nhoáng" },
+  discYourStores: { en: "Your stores", vi: "Cửa hàng của bạn" },
+
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },

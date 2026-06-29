@@ -22,6 +22,12 @@ export interface Deal {
   discountPct: number; // headline discount, used to match against wishlist targets
   url: string; // fallback public URL
   expires?: string; // human label, e.g. "Ends Sun" — optional
+  // ---- Flash deal (a temporary boosted rate). Set flash:true + the rates to
+  // surface it in the "⚡ Flash deals" row with a "3% → 12%" style badge. ----
+  flash?: boolean;
+  baseRate?: number; // normal cashback %, e.g. 3
+  flashRate?: number; // boosted cashback %, e.g. 12
+  flashEnds?: string; // short label, e.g. "Hôm nay" / "2 ngày"
 }
 
 // Hand-picked deals. Two kinds:
@@ -51,6 +57,10 @@ export const SAMPLE_DEALS: Deal[] = [
     discountPct: 30,
     url: "https://www.tiktok.com/",
     expires: "Hằng ngày",
+    flash: true,
+    baseRate: 4,
+    flashRate: 15,
+    flashEnds: "2 ngày",
   },
   {
     id: "shopee-online",
@@ -60,6 +70,10 @@ export const SAMPLE_DEALS: Deal[] = [
     discountPct: 30,
     url: "https://shopee.vn/",
     expires: "Hằng ngày",
+    flash: true,
+    baseRate: 3,
+    flashRate: 12,
+    flashEnds: "Hôm nay",
   },
   {
     id: "traveloka-travel",
@@ -119,4 +133,11 @@ export function getDeals(category?: SpendCategory): DealWithLink[] {
   return SAMPLE_DEALS.filter((d) => !category || d.category === category).map(
     (d) => ({ ...d, link: rewardLink(d.merchant, d.url) })
   );
+}
+
+// Active flash deals (temporary boosted rates), affiliate-aware. Highest boost first.
+export function getFlashDeals(): DealWithLink[] {
+  return SAMPLE_DEALS.filter((d) => d.flash)
+    .map((d) => ({ ...d, link: rewardLink(d.merchant, d.url) }))
+    .sort((a, b) => (b.flashRate ?? 0) - (a.flashRate ?? 0));
 }
