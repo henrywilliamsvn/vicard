@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getDeals } from "../deals";
 import { catLabel, t, type Lang } from "../i18n";
 import type { SpendCategory } from "../cards";
+import DealCard from "./DealCard";
 
 // Standalone "Deals" tab — a filterable list of current deals. Each deal's link
 // is already routed through the affiliate layer (see deals.ts / getDeals), so
@@ -51,29 +52,7 @@ export default function DealsTab({ lang }: { lang: Lang }) {
       ) : (
         <div className="space-y-3">
           {deals.map((d) => (
-            <a
-              key={d.id}
-              href={d.link}
-              target="_blank"
-              rel="noreferrer"
-              className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-brand transition"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs text-brand font-medium mb-0.5">
-                    {d.merchant} · {catLabel(lang, d.category)}
-                  </div>
-                  <div className="text-sm font-medium text-slate-800">{d.title}</div>
-                  {d.expires && (
-                    <div className="text-xs text-slate-400 mt-1">{d.expires}</div>
-                  )}
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-lg font-bold text-emerald-600">-{d.discountPct}%</div>
-                  <div className="text-xs text-brand">↗</div>
-                </div>
-              </div>
-            </a>
+            <DealCard key={d.id} deal={d} lang={lang} />
           ))}
         </div>
       )}
