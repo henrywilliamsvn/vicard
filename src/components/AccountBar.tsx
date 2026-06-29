@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
+import { useLang, t } from "../i18n";
 
 export default function AccountBar() {
   const { enabled, session, signIn, signUp, signOut } = useAuth();
+  const [lang] = useLang();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -88,6 +90,9 @@ export default function AccountBar() {
             {busy ? "..." : mode === "in" ? "Log in" : "Create account"}
           </button>
           {msg && <p className="text-xs text-slate-500">{msg}</p>}
+          <p className="text-[11px] text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1.5 leading-snug">
+            {t(lang, "noSell")}
+          </p>
           <p className="text-[11px] text-slate-400">
             Your wallet syncs to your account. Guest data on this device is kept and uploaded on first sign-up.
           </p>
