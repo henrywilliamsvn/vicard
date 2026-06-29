@@ -160,6 +160,21 @@ const DICT = {
   discFlash: { en: "⚡ Flash deals", vi: "⚡ Ưu đãi chớp nhoáng" },
   discYourStores: { en: "Your stores", vi: "Cửa hàng của bạn" },
 
+  // Loyalty preview (non-live)
+  loyPreview: { en: "Preview", vi: "Bản xem trước" },
+  loySoon: { en: "Coming soon", vi: "Sắp ra mắt" },
+  loyTier: { en: "Your tier", vi: "Hạng của bạn" },
+  loyTierProg: { en: "80% to Mèo Vàng", vi: "80% lên Mèo Vàng" },
+  loyWallet: { en: "Cashback wallet", vi: "Ví hoàn tiền" },
+  loyMissions: { en: "🎯 Today's missions", vi: "🎯 Nhiệm vụ hôm nay" },
+  loyM1: { en: "Open 1 deal · +20 Xu", vi: "Mở 1 deal · +20 Xu" },
+  loyM2: { en: "Invite a friend · +500 Xu", vi: "Mời bạn · +500 Xu" },
+  loyM3: { en: "Review a deal · +50 Xu", vi: "Đánh giá deal · +50 Xu" },
+  loyNote: {
+    en: "Tiers, Xu Meo & cashback wallet are in development — this is a design preview.",
+    vi: "Tích lũy hạng, Xu Meo & ví hoàn tiền đang được phát triển — đây là bản xem trước.",
+  },
+
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },

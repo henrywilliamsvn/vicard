@@ -7,6 +7,7 @@ import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
 import MoneyInput from "./components/MoneyInput";
 import StoreDiscovery from "./components/StoreDiscovery";
+import LoyaltyPreview from "./components/LoyaltyPreview";
 
 interface Props {
   ownedStates: OwnedCardState[];
@@ -144,6 +145,8 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         </div>
       )}
+      <LoyaltyPreview lang={lang} />
+
       <StoreDiscovery lang={lang} />
 
       <div>
