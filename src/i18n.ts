@@ -124,6 +124,21 @@ const DICT = {
   cookieEssential: { en: "Essential only", vi: "Chỉ cần thiết" },
   cookieMore: { en: "Learn more", vi: "Tìm hiểu thêm" },
 
+  // Shopping trips (reward tracking confirmation)
+  tripLogged: {
+    en: "✅ Trip to {m} logged — cashback (if you buy) appears within ~48h.",
+    vi: "✅ Đã ghi nhận chuyến mua sắm đến {m} — hoàn tiền (nếu mua) xuất hiện trong ~48h.",
+  },
+  tripsTitle: { en: "Shopping trips", vi: "Chuyến mua sắm" },
+  tripsBtn: { en: "Trips", vi: "Chuyến" },
+  tripsPending: { en: "Pending · ~48h", vi: "Đang chờ · ~48h" },
+  tripsEmpty: { en: "No trips yet. Tap a store to start.", vi: "Chưa có chuyến nào. Bấm vào một cửa hàng để bắt đầu." },
+  tripsNote: {
+    en: "We log each store you open so you can track your cashback. Pending rewards confirm within ~48h of a purchase.",
+    vi: "Chúng tôi ghi lại mỗi cửa hàng bạn mở để bạn theo dõi hoàn tiền. Hoàn tiền chờ xác nhận trong ~48h sau khi mua.",
+  },
+  tripsClear: { en: "Clear", vi: "Xoá" },
+
   // Rewards hub
   rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },

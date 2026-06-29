@@ -16,6 +16,8 @@ import BuyFlow from "./BuyFlow";
 import MoneyInput from "./components/MoneyInput";
 import InstallPrompt from "./components/InstallPrompt";
 import CookieConsent from "./components/CookieConsent";
+import ShoppingTripInterstitial from "./components/ShoppingTripInterstitial";
+import ShoppingTrips from "./components/ShoppingTrips";
 import DealsTab from "./components/DealsTab";
 import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
@@ -365,6 +367,8 @@ export default function App() {
 
       <InstallPrompt lang={lang} />
       <CookieConsent lang={lang} />
+      <ShoppingTripInterstitial lang={lang} />
+      <ShoppingTrips lang={lang} />
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
         <div className="flex gap-1 bg-slate-100 rounded-full p-1">
