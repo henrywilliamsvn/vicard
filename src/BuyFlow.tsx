@@ -61,6 +61,9 @@ function fuzzyStore(name: string, q: string): boolean {
   for (const ch of n) { if (ch === x[i]) i++; if (i === x.length) return true; }
   return false;
 }
+// Pull a price straight out of pasted text (URLs stripped so product IDs are
+// never mistaken for a price). A bare URL yields nothing here — that path goes
+// to the /api/price worker instead.
 function extractPrice(text: string): number | null {
   const noUrls = text.replace(/https?:\/\/\S+/g, " ");
   const tokens = noUrls.match(/\d[\d.,]{3,}/g);
@@ -71,6 +74,10 @@ function extractPrice(text: string): number | null {
     if (!isNaN(n) && n >= 1000 && n <= 1_000_000_000 && n > best) best = n;
   }
   return best > 0 ? best : null;
+}
+function firstUrl(text: string): string | null {
+  const m = text.match(/https?:\/\/\S+/);
+  return m ? m[0] : null;
 }
 
 interface Ranked { card: CardProduct; rule: RewardRule; remaining: number | null; }
@@ -97,18 +104,41 @@ function detectMerchant(q: string, lang: Lang): { merchant: string; category: Sp
   return { merchant: L(lang, "this link", "liên kết này"), category: "online" };
 }
 
+type PriceStatus = "idle" | "loading" | "done" | "none" | "error";
+
 export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const [isPremium] = usePremium();
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
   const [query, setQuery] = useState<string>("");
   const [target, setTarget] = useState<number>(20);
+  const [priceStatus, setPriceStatus] = useState<PriceStatus>("idle");
   const [items, setItems] = useState<WishlistItem[]>(() => load(KEY_WISHLIST, []));
   useEffect(() => { localStorage.setItem(KEY_WISHLIST, JSON.stringify(items)); }, [items]);
 
   const detected = useMemo(() => detectMerchant(query, lang), [query, lang]);
   useEffect(() => { if (detected) setCat(detected.category); }, [detected]);
+  // 1) price present in the pasted text → use it directly
   useEffect(() => { const p = extractPrice(query); if (p) setAmount(p); }, [query]);
+  // 2) bare product URL (no price in text) → ask the worker to read the page price
+  useEffect(() => {
+    const link = firstUrl(query);
+    if (!link || extractPrice(query)) { setPriceStatus("idle"); return; }
+    let cancelled = false;
+    setPriceStatus("loading");
+    const timer = setTimeout(() => {
+      fetch("/api/price?url=" + encodeURIComponent(link))
+        .then((r) => r.json())
+        .then((d: { price?: number | null }) => {
+          if (cancelled) return;
+          if (d && typeof d.price === "number" && d.price > 0) { setAmount(d.price); setPriceStatus("done"); }
+          else setPriceStatus("none");
+        })
+        .catch(() => { if (!cancelled) setPriceStatus("error"); });
+    }, 500);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query]);
+
   const storeResults = useMemo(() => {
     const q = query.trim();
     if (!q || detected) return [];
@@ -226,6 +256,12 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
           {detected && (
             <div className="mt-1.5 text-xs text-brand-dark bg-brand-light inline-block rounded-full px-3 py-1">🔗 {detected.merchant} → {catLabel(lang, detected.category)}{amount > 0 ? " · " + vnd(amount) : ""}</div>
+          )}
+          {detected && priceStatus === "loading" && (
+            <div className="mt-1 text-xs text-slate-400">⏳ {L(lang, "Reading the price…", "Đang đọc giá…")}</div>
+          )}
+          {detected && (priceStatus === "none" || priceStatus === "error") && amount === 0 && (
+            <div className="mt-1 text-xs text-slate-400">{L(lang, "Couldn't auto-read the price — enter the amount to see savings.", "Chưa đọc được giá tự động — nhập số tiền để xem tiết kiệm.")}</div>
           )}
         </div>
       </div>
