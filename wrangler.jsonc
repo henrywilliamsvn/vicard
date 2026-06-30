@@ -1,8 +1,10 @@
 {
-     "name": "vicard",
-     "compatibility_date": "2026-06-01",
-     "assets": {
-       "directory": "./dist",
-       "not_found_handling": "single-page-application"
-     }
-   }
+  "name": "vicard",
+  "compatibility_date": "2026-06-01",
+  "main": "worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  }
+}
