@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { CARDS, bestCardFor, type CardProduct, type RewardRule, type OwnedCardState, type SpendCategory } from "./cards";
-import { buildStackingPlan } from "./rewardSources";
+import { buildStackingPlan, REWARD_SOURCES } from "./rewardSources";
 import { cardApplyLink, rewardLink } from "./links";
 import { getDeals } from "./deals";
 import { matchWishlist, countMatches, type WishlistItem } from "./wishlist";
 import { catLabel, type Lang } from "./i18n";
 import MoneyInput from "./components/MoneyInput";
+import MerchantIcon from "./components/MerchantIcon";
 import StoreDiscovery from "./components/StoreDiscovery";
 import LoyaltyPreview from "./components/LoyaltyPreview";
 import PremiumUpsell from "./components/PremiumUpsell";
@@ -39,6 +40,38 @@ function vnd(n: number): string { return new Intl.NumberFormat("vi-VN").format(M
 function L(lang: Lang, en: string, vi: string): string { return lang === "vi" ? vi : en; }
 function pct(rate: number): number { return Math.round(rate * 100); }
 const PICK_ONE: Record<string, boolean> = { portal: true, wallet: true };
+
+type StoreLite = { name: string; url: string; category: SpendCategory; rate: number };
+function bestRateForCat(cat: SpendCategory): number {
+  let b = 0;
+  for (const c of CARDS) for (const r of c.rewards) if (r.category === cat && r.rate > b) b = r.rate;
+  if (b === 0) for (const c of CARDS) for (const r of c.rewards) if (r.category === "everything" && r.rate > b) b = r.rate;
+  return Math.round(b * 100);
+}
+const STORES: StoreLite[] = REWARD_SOURCES.map((s) => {
+  const cat = s.categories.find((c) => c !== "everything") ?? s.categories[0] ?? "online";
+  return { name: s.name, url: s.url, category: cat, rate: bestRateForCat(cat) };
+});
+function norm(s: string): string { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+function fuzzyStore(name: string, q: string): boolean {
+  const n = norm(name); const x = norm(q.trim());
+  if (!x) return false;
+  if (n.includes(x)) return true;
+  let i = 0;
+  for (const ch of n) { if (ch === x[i]) i++; if (i === x.length) return true; }
+  return false;
+}
+function extractPrice(text: string): number | null {
+  const noUrls = text.replace(/https?:\/\/\S+/g, " ");
+  const tokens = noUrls.match(/\d[\d.,]{3,}/g);
+  if (!tokens) return null;
+  let best = 0;
+  for (const tkn of tokens) {
+    const n = parseInt(tkn.replace(/[.,\s]/g, ""), 10);
+    if (!isNaN(n) && n >= 1000 && n <= 1_000_000_000 && n > best) best = n;
+  }
+  return best > 0 ? best : null;
+}
 
 interface Ranked { card: CardProduct; rule: RewardRule; remaining: number | null; }
 
@@ -75,6 +108,12 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
 
   const detected = useMemo(() => detectMerchant(query, lang), [query, lang]);
   useEffect(() => { if (detected) setCat(detected.category); }, [detected]);
+  useEffect(() => { const p = extractPrice(query); if (p) setAmount(p); }, [query]);
+  const storeResults = useMemo(() => {
+    const q = query.trim();
+    if (!q || detected) return [];
+    return STORES.filter((s) => fuzzyStore(s.name, q)).slice(0, 5);
+  }, [query, detected]);
 
   const marketBest = useMemo(() => {
     let top: { card: CardProduct; rule: RewardRule } | null = null;
@@ -123,7 +162,11 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
   const steps = useMemo(() => buildStackingPlan(cat, best?.card.product), [cat, best]);
   const applyUrl = marketBest ? cardApplyLink(marketBest.card.bank) : undefined;
 
-  const deals = useMemo(() => getDeals(), []);
+  const deals = useMemo(() => getDeals().slice().sort((a, b) => {
+    const va = a.flash && a.flashRate ? a.flashRate : a.discountPct;
+    const vb = b.flash && b.flashRate ? b.flashRate : b.discountPct;
+    return vb - va;
+  }), []);
   const matches = useMemo(() => matchWishlist(items, deals), [items, deals]);
   const totalMatches = countMatches(matches);
 
@@ -144,7 +187,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* ── 1. Category chips (horizontal, one tap) ───────────────── */}
       <div>
         <h2 className="text-xl font-bold mb-2">{L(lang, "What are you buying?", "Bạn định mua gì?")}</h2>
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -159,22 +201,36 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
             );
           })}
         </div>
-        {/* combined link + amount, inline */}
         <div className="mt-2 rounded-xl border border-slate-200 bg-white px-3 pt-2 pb-2.5">
-          <input id="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L(lang, "Paste a product link or type an item…", "Dán link sản phẩm hoặc nhập món hàng…")} className="w-full text-sm outline-none" />
+          <div className="relative">
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔎</span>
+            <input id="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L(lang, "Search a store, paste a link, or type an item…", "Tìm cửa hàng, dán link, hoặc nhập món hàng…")} className="w-full text-sm outline-none pl-6" />
+            {storeResults.length > 0 && (
+              <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                {storeResults.map((s) => (
+                  <a key={s.name} href={rewardLink(s.name, s.url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2 hover:bg-brand-light">
+                    <MerchantIcon name={s.name} url={s.url} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-slate-700 truncate">{s.name}</span>
+                      <span className="block text-[11px] text-slate-400">{catLabel(lang, s.category)}</span>
+                    </span>
+                    <span className="text-xs font-semibold text-brand whitespace-nowrap">{L(lang, "up to", "tới")} {s.rate}%</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
             <span className="text-xs text-slate-500 shrink-0">{L(lang, "Amount (optional)", "Số tiền (tuỳ chọn)")}</span>
             <div className="min-w-0"><MoneyInput value={amount} onChange={setAmount} lang={lang} /></div>
           </div>
           {detected && (
-            <div className="mt-1.5 text-xs text-brand-dark bg-brand-light inline-block rounded-full px-3 py-1">🔗 {detected.merchant} → {catLabel(lang, detected.category)}</div>
+            <div className="mt-1.5 text-xs text-brand-dark bg-brand-light inline-block rounded-full px-3 py-1">🔗 {detected.merchant} → {catLabel(lang, detected.category)}{amount > 0 ? " · " + vnd(amount) : ""}</div>
           )}
         </div>
       </div>
 
-      {/* ── 2. THE ANSWER — one dense card ─────────────────────────── */}
       <div id="cashback-comparison-section" className="rounded-2xl border border-brand/30 overflow-hidden">
-        {/* savings header */}
         <div className="bg-brand text-white px-5 py-4">
           <div className="text-[11px] uppercase tracking-wide opacity-80">{planLabel}{amount > 0 ? " · " + vnd(amount) : ""}</div>
           {cardCashback ? (
@@ -191,7 +247,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           )}
         </div>
 
-        {/* best market card (apply / owned) */}
         {marketBest && (
           <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -206,7 +261,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         )}
 
-        {/* 4-layer plan — compact chips */}
         <div className="px-4 py-3 bg-white">
           <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">{L(lang, "How to pay — stack the layers", "Cách trả — cộng dồn các lớp")}</div>
           <div className="grid grid-cols-2 gap-2">
@@ -240,7 +294,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           )}
         </div>
 
-        {/* your owned cards ranked */}
         {ranked.length > 0 ? (
           <div className="px-4 py-3 bg-white border-t border-slate-100">
             <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">{L(lang, "Your cards for", "Thẻ của bạn cho") + " " + catLabel(lang, cat)}</div>
@@ -264,7 +317,6 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         )}
       </div>
 
-      {/* ── 3. Secondary — deal-watch, deals, loyalty, discovery ──── */}
       <div id="price-alert-trigger" className="flex items-end gap-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
         <label className="block text-sm flex-1">
           <span className="text-slate-600">{L(lang, "Notify me at ≥", "Báo khi giảm ≥")} {target}%</span>
@@ -312,7 +364,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
 
       <section>
         <h2 className="text-base font-bold mb-2">{L(lang, "💸 Deals for you", "💸 Deal cho bạn")}</h2>
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {deals.slice(0, 6).map((d) => (
             <DealCard key={d.id} deal={d} lang={lang} />
           ))}
