@@ -69,49 +69,72 @@ export default function AccountBar() {
         {lang === "vi" ? "Đăng nhập" : "Sign in"}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-white text-slate-700 rounded-xl shadow-lg border border-slate-100 p-3 z-10 space-y-2">
-          <div className="flex gap-3 text-xs">
-            <button
-              onClick={() => setMode("in")}
-              className={mode === "in" ? "font-semibold text-brand" : "text-slate-400"}
-            >
-              Log in
-            </button>
-            <button
-              onClick={() => setMode("up")}
-              className={mode === "up" ? "font-semibold text-brand" : "text-slate-400"}
-            >
-              Sign up
-            </button>
-          </div>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            placeholder="Email"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            placeholder="Password (min 6 chars)"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={submit}
-            disabled={busy || !email || password.length < 6}
-            className="w-full bg-brand text-white rounded-lg py-2 text-sm font-medium disabled:opacity-40"
+        // Centered fixed modal (not an anchored dropdown) so the mobile keyboard
+        // can't push the fields off the top of the screen. Tap the dim backdrop
+        // to close; taps inside the card don't close it.
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white text-slate-700 rounded-2xl shadow-xl border border-slate-100 p-5 space-y-3"
+            onClick={(e) => e.stopPropagation()}
           >
-            {busy ? "..." : mode === "in" ? "Log in" : "Create account"}
-          </button>
-          {msg && <p className="text-xs text-slate-500">{msg}</p>}
-          <p className="text-[11px] text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1.5 leading-snug">
-            {t(lang, "noSell")}
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Your wallet syncs to your account. Guest data on this device is kept and uploaded on first sign-up.
-          </p>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4 text-sm">
+                <button
+                  onClick={() => setMode("in")}
+                  className={mode === "in" ? "font-semibold text-brand" : "text-slate-400"}
+                >
+                  {lang === "vi" ? "Đăng nhập" : "Log in"}
+                </button>
+                <button
+                  onClick={() => setMode("up")}
+                  className={mode === "up" ? "font-semibold text-brand" : "text-slate-400"}
+                >
+                  {lang === "vi" ? "Đăng ký" : "Sign up"}
+                </button>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                aria-label={lang === "vi" ? "Đóng" : "Close"}
+                className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="Email"
+              // text-base (16px) stops iOS from auto-zooming when the field is focused
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-base"
+            />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder={lang === "vi" ? "Mật khẩu (tối thiểu 6 ký tự)" : "Password (min 6 chars)"}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-base"
+            />
+            <button
+              onClick={submit}
+              disabled={busy || !email || password.length < 6}
+              className="w-full bg-brand text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-40"
+            >
+              {busy ? "..." : mode === "in" ? (lang === "vi" ? "Đăng nhập" : "Log in") : (lang === "vi" ? "Tạo tài khoản" : "Create account")}
+            </button>
+            {msg && <p className="text-xs text-slate-500">{msg}</p>}
+            <p className="text-[11px] text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1.5 leading-snug">
+              {t(lang, "noSell")}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {lang === "vi"
+                ? "Ví thẻ của bạn được đồng bộ vào tài khoản. Dữ liệu khách trên máy này được giữ lại và tải lên khi bạn đăng ký lần đầu."
+                : "Your wallet syncs to your account. Guest data on this device is kept and uploaded on first sign-up."}
+            </p>
+          </div>
         </div>
       )}
     </div>
