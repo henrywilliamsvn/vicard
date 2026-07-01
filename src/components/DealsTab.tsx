@@ -50,7 +50,7 @@ export default function DealsTab({ lang }: { lang: Lang }) {
       {deals.length === 0 ? (
         <p className="text-sm text-slate-500">{t(lang, "dealsEmpty")}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {deals.map((d) => (
             <DealCard key={d.id} deal={d} lang={lang} />
           ))}

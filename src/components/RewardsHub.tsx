@@ -7,7 +7,6 @@ import {
   type RewardSource,
 } from "../rewardSources";
 import { rewardLink, hasAnyAffiliate } from "../links";
-import { getDeals } from "../deals";
 import { type Lang, t, catLabel } from "../i18n";
 
 const CATEGORY_KEYS: { key: SpendCategory; emoji: string }[] = [
@@ -80,7 +79,6 @@ export default function RewardsHub({
     () => buildStackingPlan(category, bestCardLabel(category)),
     [category, bestCardLabel]
   );
-  const deals = useMemo(() => getDeals(), []);
 
   function stepTitle(layer: RewardLayer): string {
     return t(lang, layer === "portal" ? "stepPortalTitle" : layer === "voucher" ? "stepVoucherTitle" : layer === "wallet" ? "stepWalletTitle" : "stepCardTitle");
@@ -95,61 +93,7 @@ export default function RewardsHub({
 
   return (
     <div className="space-y-8">
-      {/* ---- Step 1: Link everything once ---------------------------------- */}
-      <section>
-        <h2 className="text-lg font-semibold mb-1">{t(lang, "rhLinkTitle")}</h2>
-        <p className="text-sm text-slate-500 mb-3">{t(lang, "rhLinkSub")}</p>
-
-        <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 mb-4">
-          <div className="flex justify-between text-xs text-slate-500 mb-1">
-            <span>{t(lang, "rhLinked")}</span>
-            <span>{linkedCount} / {sources.length}</span>
-          </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-brand transition-all" style={{ width: pct + "%" }} />
-          </div>
-          {linkedCount === sources.length && (
-            <p className="text-xs text-emerald-600 mt-2 font-medium">{t(lang, "rhAllLinked")}</p>
-          )}
-        </div>
-
-        <div className="space-y-5">
-          {(Object.keys(byLayer) as RewardLayer[]).map((layer) => (
-            <div key={layer}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={"text-xs font-medium px-2 py-0.5 rounded-full " + LAYER_BADGE[layer]}>
-                  {layerLabel(lang, layer)}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {byLayer[layer]!.map((s) => {
-                  const isLinked = !!linked[s.name];
-                  return (
-                    <div key={s.name} className={"rounded-xl border p-3 transition " + (isLinked ? "border-emerald-200 bg-emerald-50/50" : "border-slate-100 bg-white")}>
-                      <div className="flex items-start gap-3">
-                        <button onClick={() => toggleLinked(s.name)} aria-label="toggle linked" className={"mt-0.5 w-5 h-5 rounded flex items-center justify-center text-[11px] text-white shrink-0 " + (isLinked ? "bg-emerald-500" : "bg-slate-200")}>
-                          {isLinked ? "✓" : ""}
-                        </button>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-slate-800 text-sm">{s.name}</span>
-                            <a href={rewardLink(s.name, s.setupUrl ?? s.url)} target="_blank" rel="noreferrer" className="text-xs text-brand hover:underline shrink-0 ml-2">
-                              {(isLinked ? t(lang, "open") : t(lang, "setUp")) + " ↗"}
-                            </a>
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1">{s.setup}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ---- Step 2: Per-purchase stacking guide --------------------------- */}
+      {/* ---- Step 1: How-to-optimize guide (leads) ------------------------ */}
       <section>
         <h2 className="text-lg font-semibold mb-1">{t(lang, "rhStackTitle")}</h2>
         <p className="text-sm text-slate-500 mb-3">{t(lang, "rhStackSub")}</p>
@@ -194,30 +138,79 @@ export default function RewardsHub({
         <p className="text-xs text-slate-400 mt-4">{t(lang, "rhPromoNote")}</p>
       </section>
 
-      {/* ---- Step 3: Deals right now --------------------------------------- */}
-      <section>
-        <h2 className="text-lg font-semibold mb-1">{t(lang, "rhDealsTitle")}</h2>
-        <p className="text-sm text-slate-500 mb-3">{t(lang, "rhDealsSub")}</p>
-        <div className="space-y-2">
-          {deals.map((d) => (
-            <a key={d.id} href={d.link} target="_blank" rel="noreferrer" className="block rounded-xl bg-white shadow-sm border border-slate-100 p-3 hover:border-brand transition">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-slate-800">{d.title}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">{d.merchant}</div>
+      {/* ---- Step 2: Link your reward sources (collapsible, below guide) --- */}
+      <details className="group rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+        <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-base font-semibold text-slate-800">{t(lang, "rhLinkTitle")}</span>
+            <span className="block text-xs text-slate-500 mt-0.5">{t(lang, "rhLinkToggleHint")}</span>
+          </span>
+          <span className="shrink-0 flex items-center gap-2">
+            <span className={"text-xs font-medium " + (linkedCount === sources.length ? "text-emerald-600" : "text-slate-500")}>{linkedCount} / {sources.length}</span>
+            <span className="text-slate-400 transition-transform group-open:rotate-180">▾</span>
+          </span>
+        </summary>
+
+        <div className="px-4 pb-4 border-t border-slate-100 pt-4">
+          <p className="text-sm text-slate-500 mb-3">{t(lang, "rhLinkSub")}</p>
+
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 mb-4">
+            <div className="flex justify-between text-xs text-slate-500 mb-1">
+              <span>{t(lang, "rhLinked")}</span>
+              <span>{linkedCount} / {sources.length}</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-brand transition-all" style={{ width: pct + "%" }} />
+            </div>
+            {linkedCount === sources.length && (
+              <p className="text-xs text-emerald-600 mt-2 font-medium">{t(lang, "rhAllLinked")}</p>
+            )}
+          </div>
+
+          <div className="space-y-5">
+            {(Object.keys(byLayer) as RewardLayer[]).map((layer) => (
+              <div key={layer}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full " + LAYER_BADGE[layer]}>
+                    {layerLabel(lang, layer)}
+                  </span>
                 </div>
-                <div className="text-right shrink-0">
-                  {d.expires && <div className="text-[11px] text-amber-600 font-medium">{d.expires}</div>}
-                  <div className="text-xs text-brand">{t(lang, "open")} ↗</div>
+                <div className="space-y-2">
+                  {byLayer[layer]!.map((s) => {
+                    const isLinked = !!linked[s.name];
+                    return (
+                      <div key={s.name} className={"rounded-xl border p-3 transition " + (isLinked ? "border-emerald-200 bg-emerald-50/50" : "border-slate-100 bg-white")}>
+                        <div className="flex items-start gap-3">
+                          <button onClick={() => toggleLinked(s.name)} aria-label="toggle linked" className={"mt-0.5 w-5 h-5 rounded flex items-center justify-center text-[11px] text-white shrink-0 " + (isLinked ? "bg-emerald-500" : "bg-slate-200")}>
+                            {isLinked ? "✓" : ""}
+                          </button>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-slate-800 text-sm">{s.name}</span>
+                              <a href={rewardLink(s.name, s.setupUrl ?? s.url)} target="_blank" rel="noreferrer" className="text-xs text-brand hover:underline shrink-0 ml-2">
+                                {(isLinked ? t(lang, "open") : t(lang, "setUp")) + " ↗"}
+                              </a>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">{s.setup}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </a>
-          ))}
+            ))}
+          </div>
         </div>
+      </details>
+
+      {/* ---- Pointer to the Deals tab (replaces the old duplicate list) ---- */}
+      <div className="text-center">
+        <p className="text-xs text-slate-400">{t(lang, "rhDealsMoved")}</p>
         {hasAnyAffiliate() && (
-          <p className="text-[11px] text-slate-400 mt-3 leading-snug">{t(lang, "rhDisclosure")}</p>
+          <p className="text-[11px] text-slate-400 mt-2 leading-snug">{t(lang, "rhDisclosure")}</p>
         )}
-      </section>
+      </div>
     </div>
   );
 }
