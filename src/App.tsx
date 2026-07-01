@@ -289,34 +289,66 @@ export default function App() {
     </section>
   );
 
+  // Group the addable cards by bank so the list reads as collapsible sections
+  // instead of one long flat list.
+  const banksToAdd = (() => {
+    const groups = new Map<string, CardProduct[]>();
+    for (const c of availableToAdd) {
+      const arr = groups.get(c.bank) ?? [];
+      arr.push(c);
+      groups.set(c.bank, arr);
+    }
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+
   const addCardSection = (
     <section>
       <h2 className="text-lg font-semibold mb-3">{t(lang, "addACard")}</h2>
       <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
         <p className="text-sm text-slate-600">{t(lang, "tickEvery")}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {availableToAdd.map((c) => {
-            const checked = selectedIds.includes(c.id);
-            const applyUrl = cardApplyLink(c.bank);
-            return (
-              <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
-                <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
-                  <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
-                  <span className="min-w-0">
-                    <span className="font-medium text-slate-700">{c.product}</span>
-                    <span className="block text-xs text-slate-400">{c.bank}</span>
-                  </span>
-                </button>
-                {applyUrl && (
-                  <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
-                    {t(lang, "apply")} ↗
-                  </a>
-                )}
-              </div>
-            );
-          })}
-          {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>}
-        </div>
+        {availableToAdd.length === 0 ? (
+          <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>
+        ) : (
+          <div className="space-y-2">
+            {banksToAdd.map(([bank, cards], idx) => {
+              const selInBank = cards.filter((c) => selectedIds.includes(c.id)).length;
+              return (
+                <details key={bank} open={idx === 0} className="group border border-slate-200 rounded-lg overflow-hidden">
+                  <summary className="cursor-pointer list-none px-3 py-2.5 flex items-center justify-between gap-2 bg-slate-50 hover:bg-slate-100">
+                    <span className="font-medium text-slate-700 text-sm min-w-0 truncate">{bank}</span>
+                    <span className="shrink-0 flex items-center gap-2 text-xs text-slate-400">
+                      {selInBank > 0 && <span className="text-brand font-medium">{selInBank} ✓</span>}
+                      <span>{cards.length}</span>
+                      <span className="transition-transform group-open:rotate-180">▾</span>
+                    </span>
+                  </summary>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+                    {cards.map((c) => {
+                      const checked = selectedIds.includes(c.id);
+                      const applyUrl = cardApplyLink(c.bank);
+                      return (
+                        <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
+                          <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
+                            <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
+                            <span className="min-w-0">
+                              <span className="font-medium text-slate-700">{c.product}</span>
+                              <span className="block text-xs text-slate-400">{c.bank}</span>
+                            </span>
+                          </button>
+                          {applyUrl && (
+                            <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
+                              {t(lang, "apply")} ↗
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
         <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
           {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
         </button>

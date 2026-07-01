@@ -187,14 +187,16 @@ const DICT = {
   upsellNote: { en: "Coming soon — free to try.", vi: "Sắp ra mắt — dùng thử miễn phí." },
 
   // Rewards hub
-  rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
+  rhLinkTitle: { en: "2 · Link up your rewards", vi: "2 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },
   rhLinked: { en: "Linked", vi: "Đã kết nối" },
   rhAllLinked: { en: "🎉 All linked — you're set to stack on every purchase.", vi: "🎉 Đã kết nối hết — sẵn sàng cộng dồn cho mọi giao dịch." },
-  rhStackTitle: { en: "2 · Stack a purchase", vi: "2 · Cộng dồn cho một giao dịch" },
+  rhStackTitle: { en: "1 · How to optimize", vi: "1 · Hướng dẫn tối ưu" },
   rhStackSub: { en: "Pick what you're buying — follow the steps in order to layer every discount.", vi: "Chọn món bạn mua — làm theo thứ tự để xếp chồng mọi ưu đãi." },
   rhDealsTitle: { en: "3 · Deals right now", vi: "3 · Ưu đãi đang có" },
   rhDealsSub: { en: "A few deals worth grabbing today. Tap to open the source.", vi: "Vài ưu đãi đáng chú ý hôm nay. Chạm để mở nguồn." },
+  rhDealsMoved: { en: "Looking for deals? See the latest in the Deals tab 🏷️", vi: "Tìm ưu đãi? Xem mới nhất ở tab Ưu đãi 🏷️" },
+  rhLinkToggleHint: { en: "Tap to set up your reward sources", vi: "Chạm để thiết lập các nguồn ưu đãi" },
   open: { en: "Open", vi: "Mở" },
   setUp: { en: "Set up", vi: "Thiết lập" },
   rhPromoNote: { en: "Promo rates change constantly — always check each app's voucher tab before paying. Not financial advice.", vi: "Khuyến mãi thay đổi liên tục — luôn kiểm tra mục voucher của từng app trước khi trả. Không phải tư vấn tài chính." },
