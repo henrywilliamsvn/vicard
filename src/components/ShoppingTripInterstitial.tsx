@@ -14,13 +14,31 @@ import {
   buildSubId,
   composeFinalUrl,
   buildAppLink,
+  type Network,
+  type Platform,
 } from "../redirect/adapters";
 
 // "Shopping Trip Active" redirect, driven by the deterministic redirect machine
-// (src/redirect/machine.ts). Intercepts external retailer/affiliate links and
-// runs a same-tab interstitial: validate → inject SubID → show exclusions →
-// 3s countdown → app deep-link (mobile, with web fallback) or web redirect.
-// Trip logging still fires the `mss-trip` event for the in-app history.
+// (src/redirect/machine.ts). Intercepts external retailer/affiliate links.
+//
+// UX model (why the site "hands off"):
+//   Cashback portals must be reached by a top-level navigation so they can attach
+//   your tracking. So Meo can't keep the store inside itself — it sends you out.
+//   To keep users from feeling lost we do two things:
+//     1. First time only: a "how Meo works" explainer before the first redirect.
+//     2. On desktop we open the store in a NEW TAB (Meo stays open in the old one).
+//        Popup blockers only allow this from a real click, and the tracking URL
+//        isn't ready until the machine computes it — so we open a blank tab on the
+//        click, then point it at the final tracked URL once ready.
+
+const INTRO_KEY = "mss_trip_intro_done";
+
+interface PendingClick {
+  merchant: string;
+  network: Network;
+  baseUrl: string;
+  platform: Platform;
+}
 
 function cleanMerchant(text: string | null): string | null {
   if (!text) return null;
@@ -35,6 +53,36 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
   const [m, setM] = useState<RMachine>(createInitial);
   const send = useCallback((e: REvent) => setM((prev) => reduce(prev, e)), []);
   const trippedRef = useRef(false);
+
+  // A blank tab we pre-open on the user's click (desktop only) so we can later
+  // point it at the tracked URL without the popup blocker eating it.
+  const newTabRef = useRef<Window | null>(null);
+  // First-time explainer: the click we're holding until the user reads it.
+  const [pending, setPending] = useState<PendingClick | null>(null);
+
+  function openHoldingTab(platform: Platform): Window | null {
+    if (platform !== "desktop") return null; // mobile uses app deep-link / same tab
+    try {
+      return window.open("about:blank", "_blank");
+    } catch {
+      return null;
+    }
+  }
+
+  const armFrom = useCallback(
+    (p: PendingClick) => {
+      trippedRef.current = false;
+      send({
+        type: "ARM",
+        merchant: p.merchant,
+        network: p.network,
+        baseUrl: p.baseUrl,
+        platform: p.platform,
+        userId: null, // guest by default; wire real session here if required
+      });
+    },
+    [send]
+  );
 
   // ---- Global click interceptor: external target=_blank links arm the machine ----
   useEffect(() => {
@@ -54,19 +102,31 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
       if (host === location.host) return;
 
       e.preventDefault();
-      trippedRef.current = false;
-      send({
-        type: "ARM",
+      const platform = detectPlatform();
+      const p: PendingClick = {
         merchant: cleanMerchant(a.textContent) ?? host,
         network: detectNetwork(href),
         baseUrl: href,
-        platform: detectPlatform(),
-        userId: null, // guest by default; wire real session here if required
-      });
+        platform,
+      };
+
+      // First-ever external click → show the one-time explainer instead of
+      // redirecting right away. (We open the holding tab later, on the intro's
+      // "take me there" button — that click is the user gesture popups need.)
+      const seenIntro =
+        typeof localStorage !== "undefined" && localStorage.getItem(INTRO_KEY) === "1";
+      if (!seenIntro) {
+        setPending(p);
+        return;
+      }
+
+      // Returning user: open the holding tab now (this click is the gesture) and arm.
+      newTabRef.current = openHoldingTab(platform);
+      armFrom(p);
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [send]);
+  }, [armFrom]);
 
   // ---- Side-effects per state ----
   const { state, context } = m;
@@ -113,18 +173,100 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
       };
     }
     if (state === "executingWebRedirect") {
-      window.location.assign(context.finalUrl ?? context.baseUrl);
+      const url = context.finalUrl ?? context.baseUrl;
+      // If we have a pre-opened tab (desktop), send it to the store and keep Meo
+      // open here. Otherwise fall back to a same-tab redirect (original behaviour).
+      if (newTabRef.current && !newTabRef.current.closed) {
+        try {
+          newTabRef.current.location.href = url;
+        } catch {
+          window.open(url, "_blank");
+        }
+        newTabRef.current = null;
+        setM(createInitial()); // hide the overlay; the user stays on Meo
+      } else {
+        window.location.assign(url);
+      }
       return;
     }
     return;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, context.countdown]);
 
-  // ---- Render ----
+  // ---- First-time explainer overlay ----
+  if (pending) {
+    const merchant = pending.merchant || (vi ? "cửa hàng" : "the store");
+    const dismiss = () => {
+      if (newTabRef.current && !newTabRef.current.closed) newTabRef.current.close();
+      newTabRef.current = null;
+      setPending(null);
+    };
+    const go = () => {
+      if (typeof localStorage !== "undefined") localStorage.setItem(INTRO_KEY, "1");
+      newTabRef.current = openHoldingTab(pending.platform); // gesture → allowed
+      const p = pending;
+      setPending(null);
+      armFrom(p);
+    };
+    const steps = vi
+      ? [
+          `Meo đưa bạn sang ${merchant} kèm mã hoàn tiền của bạn.`,
+          `Bạn mua sắm như bình thường trên ${merchant}.`,
+          "Quay lại Meo — tiền hoàn về ví của bạn sau ~48 giờ.",
+        ]
+      : [
+          `Meo sends you to ${merchant} with your cashback code attached.`,
+          `You shop as normal on ${merchant}.`,
+          "Come back to Meo — cashback lands in your wallet in ~48h.",
+        ];
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 text-center">
+          <img src="/mascot.png" alt="Meo" className="w-16 h-16 rounded-full bg-brand-light object-cover mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-slate-800 mb-1">
+            {vi ? "Meo hoạt động thế nào? 🐱" : "How Meo works 🐱"}
+          </h2>
+          <p className="text-sm text-slate-500 mb-4">
+            {vi ? "Chỉ 3 bước để không bao giờ mua hớ:" : "Just 3 steps to never overpay:"}
+          </p>
+          <ol className="text-left space-y-3 mb-4">
+            {steps.map((s, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="w-6 h-6 shrink-0 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <span className="text-sm text-slate-700">{s}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 mb-4">
+            {vi
+              ? `${merchant} sẽ mở ở tab mới — Meo vẫn ở đây chờ bạn quay lại.`
+              : `${merchant} opens in a new tab — Meo stays right here for when you're back.`}
+          </p>
+          <button
+            onClick={go}
+            className="w-full bg-brand text-white font-bold rounded-full py-3 mb-2"
+          >
+            {vi ? `Tôi hiểu, tới ${merchant} →` : `Got it, take me to ${merchant} →`}
+          </button>
+          <button onClick={dismiss} className="text-slate-400 text-sm py-1">
+            {vi ? "Để sau" : "Maybe later"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Machine-driven render ----
   const hidden = state === "idle" || state === "redirected" || state === "webFallback" || state === "aborted";
   if (hidden) return null;
 
-  const close = () => send({ type: "CANCEL" });
+  const close = () => {
+    if (newTabRef.current && !newTabRef.current.closed) newTabRef.current.close();
+    newTabRef.current = null;
+    send({ type: "CANCEL" });
+  };
   const merchant = context.merchant || (vi ? "cửa hàng" : "the store");
 
   let title = "";
@@ -139,7 +281,7 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
       : "Same session · no outside codes · cashback in ~48h";
   } else if (state === "countdown") {
     title = vi ? `Tự động chuyển sau ${context.countdown} giây` : `Redirecting in ${context.countdown}s`;
-    sub = vi ? "Meo đang đưa bạn tới nơi mua sắm 🛒" : "Meo is taking you shopping 🛒";
+    sub = vi ? "Meo vẫn mở ở đây — quay lại sau khi mua xong nhé 🛒" : "Meo stays open here — come back after you shop 🛒";
   } else if (state === "executingAppRedirect") {
     title = vi ? `Đang mở ứng dụng ${merchant}…` : `Opening the ${merchant} app…`;
   } else if (state === "sessionBlocked") {
