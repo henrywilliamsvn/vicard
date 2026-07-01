@@ -18,6 +18,10 @@ import {
   type Platform,
 } from "../redirect/adapters";
 
+// "Shopping Trip Active" redirect — intercepts external retailer/affiliate links,
+// shows a one-time "how Meo works" explainer, and (on desktop) opens the store in
+// a new tab so Meo stays open.
+
 const INTRO_KEY = "mss_trip_intro_done";
 
 interface PendingClick {
@@ -27,6 +31,8 @@ interface PendingClick {
   platform: Platform;
 }
 
+// Known brands, matched against the destination URL. Deal cards concatenate the
+// brand with rate badges ("ShopBackTới 30%…"), so the URL is the reliable source.
 const BRAND_BY_URL: [RegExp, string][] = [
   [/shopback/i, "ShopBack"],
   [/shopee/i, "Shopee"],
@@ -80,6 +86,9 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
       const note = vi
         ? "Meo đang gắn mã hoàn tiền cho bạn 🐱"
         : "Meo is attaching your cashback tracking 🐱";
+      const backNote = vi
+        ? "Mua xong nhớ quay lại Meo để chọn ưu đãi tiếp theo nhé! 🐱"
+        : "Done shopping? Come back to Meo to pick your next deal! 🐱";
       try {
         w.document.write(
           `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">` +
@@ -88,7 +97,8 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
             `font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(160deg,#FF7A1A,#E2640A);color:#fff;text-align:center;padding:24px">` +
             `<img src="${location.origin}/mascot.png" alt="Meo" style="width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.2);object-fit:cover;margin-bottom:16px">` +
             `<h1 style="font-size:20px;margin:0 0 8px">🛒 ${title}</h1>` +
-            `<p style="opacity:.95;margin:0;max-width:320px;font-size:14px">${note}</p></body></html>`
+            `<p style="opacity:.95;margin:0 0 16px;max-width:320px;font-size:14px">${note}</p>` +
+            `<p style="opacity:.9;margin:0;max-width:320px;font-size:13px;background:rgba(255,255,255,.15);padding:10px 14px;border-radius:12px">${backNote}</p></body></html>`
         );
         w.document.close();
       } catch {
