@@ -89,18 +89,6 @@ function waitForElement(selector: string, timeout = 4000): Promise<Element | nul
   });
 }
 
-/** Prefer a Vietnamese voice; otherwise fall back to the default / any voice so audio still plays. */
-function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | null {
-  if (!voices.length) return null;
-  return (
-    voices.find((v) => v.lang?.toLowerCase().startsWith("vi")) ??
-    voices.find((v) => v.lang === lang) ??
-    voices.find((v) => v.default) ??
-    voices[0] ??
-    null
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -109,7 +97,6 @@ export default function ProductTour({
   run,
   steps = DEFAULT_TOUR_STEPS,
   onFinish,
-  voiceLang = "vi-VN",
   mascotSrc,
 }: Props) {
   const [active, setActive] = useState(false);
@@ -118,7 +105,6 @@ export default function ProductTour({
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
-  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
@@ -126,20 +112,18 @@ export default function ProductTour({
   indexRef.current = index;
   const primeRef = useRef<(() => void) | null>(null);
 
-  /* ---- Load TTS voices (async on most browsers) ---- */
-  useEffect(() => {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    const load = () => {
-      voicesRef.current = synth.getVoices();
-    };
-    load();
-    synth.addEventListener?.("voiceschanged", load);
-    return () => synth.removeEventListener?.("voiceschanged", load);
-  }, []);
-
-  /* ---- Voice: prefer pre-generated ElevenLabs "Adam" clips, fall back to browser TTS ---- */
-  // Clips live at /tour-audio/step-<i>.mp3 — generate them with scripts/generate-tour-audio.mjs.
+  /* ---- Voice: pre-generated ElevenLabs "Adam" clips ONLY. ----
+   * Clips live at /tour-audio/step-<i>.mp3 — generate them with
+   * scripts/generate-tour-audio.mjs and ship them with the deploy.
+   * If a clip is missing the step is simply silent (visual tour still works).
+   *
+   * IMPORTANT: never fall back to window.speechSynthesis here. The Web Speech
+   * API has a long-standing Chromium-on-Windows bug where speak()/cancel()
+   * cycles can hang the renderer process (hard tab freeze, no console error).
+   * We hit exactly that in production on 2026-07-02: the deployed build was
+   * missing /tour-audio/*.mp3, every visitor's first click fell back to TTS,
+   * and the page froze. Silence beats a dead app.
+   */
   const TOUR_AUDIO_BASE = "/tour-audio";
 
   function stopAudio() {
@@ -149,42 +133,20 @@ export default function ProductTour({
     }
   }
 
-  function speak(text: string, force: boolean, stepIndex?: number) {
+  function speak(_text: string, force: boolean, stepIndex?: number) {
     if (mutedRef.current && !force) return;
-    window.speechSynthesis?.cancel();
     stopAudio();
-    // Try the Adam clip for this step; if it's missing/blocked, use browser TTS.
-    if (stepIndex != null) {
-      const a = new Audio(`${TOUR_AUDIO_BASE}/step-${stepIndex}.mp3`);
-      audioRef.current = a;
-      a.onplay = () => setSpeaking(true);
-      a.onended = () => setSpeaking(false);
-      const fallback = () => {
-        if (audioRef.current === a) audioRef.current = null;
-        ttsSpeak(text, force);
-      };
-      a.onerror = fallback;
-      a.play().catch(fallback);
-      return;
-    }
-    ttsSpeak(text, force);
-  }
-
-  function ttsSpeak(text: string, force: boolean) {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    if (mutedRef.current && !force) return;
-    synth.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = voiceLang;
-    utter.rate = 1;
-    utter.pitch = 1.06;
-    const voice = pickVoice(voicesRef.current, voiceLang);
-    if (voice) utter.voice = voice;
-    utter.onstart = () => setSpeaking(true);
-    utter.onend = () => setSpeaking(false);
-    utter.onerror = () => setSpeaking(false);
-    synth.speak(utter);
+    if (stepIndex == null) return;
+    const a = new Audio(`${TOUR_AUDIO_BASE}/step-${stepIndex}.mp3`);
+    audioRef.current = a;
+    a.onplay = () => setSpeaking(true);
+    a.onended = () => setSpeaking(false);
+    const silent = () => {
+      if (audioRef.current === a) audioRef.current = null;
+      setSpeaking(false);
+    };
+    a.onerror = silent;
+    a.play().catch(silent);
   }
 
   /* ---- Step navigation ---- */
@@ -231,7 +193,6 @@ export default function ProductTour({
       primeRef.current = null;
     }
     stopAudio();
-    window.speechSynthesis?.cancel();
     setSpeaking(false);
     setActive(false);
     onFinish?.();
@@ -273,7 +234,6 @@ export default function ProductTour({
   useEffect(() => {
     return () => {
       stopAudio();
-      window.speechSynthesis?.cancel();
     };
   }, []);
 
@@ -283,7 +243,6 @@ export default function ProductTour({
       mutedRef.current = next;
       if (next) {
         stopAudio();
-        window.speechSynthesis?.cancel();
         setSpeaking(false);
       } else {
         const step = steps[index];
