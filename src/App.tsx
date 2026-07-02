@@ -151,6 +151,15 @@ export default function App() {
       return () => window.clearTimeout(id);
     }
   }, []);
+  // If the user navigates away from the Buy tab mid-tour, they've taken the
+  // wheel — dismiss the tour instead of leaving a stale spotlight glued to the
+  // old position over the new view.
+  useEffect(() => {
+    if (tab !== "buy" && runTour) {
+      setRunTour(false);
+      if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
+    }
+  }, [tab, runTour]);
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);

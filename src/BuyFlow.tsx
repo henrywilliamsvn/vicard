@@ -297,7 +297,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           </div>
         )}
 
-        <div className="px-4 py-3 bg-white">
+        <div id="bonus-channels-guide" className="px-4 py-3 bg-white">
           <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">{L(lang, "How to pay — stack the layers", "Cách trả — cộng dồn các lớp")}</div>
           <div className="grid grid-cols-2 gap-2">
             {steps.map((s) => {
