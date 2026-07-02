@@ -102,15 +102,17 @@ export default function ProductTour({
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [muted, setMuted] = useState(false);
+  // Voice is OPT-IN (muted by default). Autoplaying audio was implicated in
+  // renderer freezes on some Windows/Chrome machines (2026-07-02), and
+  // auto-playing a voice at first-time visitors is pushy anyway. The user can
+  // tap the speaker button — that tap is also the user gesture browsers
+  // require for audio playback.
+  const [muted, setMuted] = useState(true);
   const [speaking, setSpeaking] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;
-  const indexRef = useRef(index);
-  indexRef.current = index;
-  const primeRef = useRef<(() => void) | null>(null);
 
   /* ---- Voice: pre-generated ElevenLabs "Adam" clips ONLY. ----
    * Clips live at /tour-audio/step-<i>.mp3 — generate them with
@@ -174,24 +176,12 @@ export default function ProductTour({
 
   function startTour() {
     setActive(true);
-    setMuted(false);
-    mutedRef.current = false;
-    // Browsers block speech synthesis until a user gesture; the tour auto-starts,
-    // so speak the current step on the first interaction (covers step 1's audio).
-    const prime = () => {
-      const s = steps[indexRef.current];
-      if (s) speak(s.body, true, indexRef.current);
-    };
-    primeRef.current = prime;
-    window.addEventListener("pointerdown", prime, { once: true });
+    // No autoplay "prime" listener: voice stays off until the user taps the
+    // speaker button (see the muted-by-default note above).
     void showStep(0);
   }
 
   function finish() {
-    if (primeRef.current) {
-      window.removeEventListener("pointerdown", primeRef.current);
-      primeRef.current = null;
-    }
     stopAudio();
     setSpeaking(false);
     setActive(false);
