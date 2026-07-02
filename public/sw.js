@@ -3,7 +3,9 @@
 // cached shell is only an offline fallback. Hashed assets are cache-first
 // (their filenames change every build, so that's always fresh too).
 // Bump CACHE on any caching-strategy change to force-clear old caches.
-const CACHE = "mss-v2";
+// v3: purge poisoned /tour-audio/*.mp3 entries — before 2026-07-02 those URLs
+// 404'd to the SPA's index.html and the SW cached that HTML forever.
+const CACHE = "mss-v3";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/mascot.png"];
 
 self.addEventListener("install", (e) => {
