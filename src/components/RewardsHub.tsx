@@ -44,12 +44,19 @@ function layerLabel(lang: Lang, layer: RewardLayer): string {
   );
 }
 
+function L(lang: Lang, en: string, vi: string): string {
+  return lang === "vi" ? vi : en;
+}
+
 export default function RewardsHub({
   bestCardLabel,
   lang,
+  onPickCards,
 }: {
   bestCardLabel: (cat: SpendCategory) => string | undefined;
   lang: Lang;
+  /** Open the "Bạn có thẻ nào?" picker — shown in the card step for card-less users. */
+  onPickCards?: () => void;
 }) {
   const [linked, setLinked] = useState<Record<string, boolean>>(() =>
     load(KEY_LINKED, {})
@@ -117,6 +124,14 @@ export default function RewardsHub({
                     <span className={"text-[10px] font-medium px-1.5 py-0.5 rounded-full " + LAYER_BADGE[step.layer]}>{layerLabel(lang, step.layer)}</span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">{stepDetail(step.layer)}</p>
+                  {step.layer === "card" && !bestCardLabel(category) && onPickCards && (
+                    <button
+                      onClick={onPickCards}
+                      className="mt-2 text-xs bg-brand text-white rounded-full px-3 py-1.5 font-medium hover:bg-brand-dark transition"
+                    >
+                      💳 {L(lang, "Pick the cards you have", "Chọn thẻ bạn đang có")}
+                    </button>
+                  )}
                   {step.sources.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {step.sources.map((s) => {
