@@ -17,6 +17,8 @@ interface Props {
   ownedStates: OwnedCardState[];
   lang: Lang;
   onAddCards: () => void;
+  /** Open the quick "Bạn có thẻ nào?" picker (falls back to onAddCards). */
+  onPickCards?: () => void;
 }
 
 const CATS: { key: SpendCategory; icon: string }[] = [
@@ -106,7 +108,8 @@ function detectMerchant(q: string, lang: Lang): { merchant: string; category: Sp
 
 type PriceStatus = "idle" | "loading" | "done" | "none" | "error";
 
-export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
+export default function BuyFlow({ ownedStates, lang, onAddCards, onPickCards }: Props) {
+  const pickCards = onPickCards ?? onAddCards;
   const [isPremium] = usePremium();
   const [cat, setCat] = useState<SpendCategory>("online");
   const [amount, setAmount] = useState<number>(0);
@@ -279,7 +282,12 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           ) : best ? (
             <div className="text-xl font-bold mt-0.5">{pct(best.rule.rate) + "% " + L(lang, "back with", "với") + " " + best.card.product}</div>
           ) : (
-            <div className="text-base font-semibold mt-0.5">{L(lang, "Add a card to see your exact savings.", "Thêm thẻ để xem số tiết kiệm chính xác.")}</div>
+            <>
+              <div className="text-base font-semibold mt-0.5">{L(lang, "Tell Meo which cards you have — get YOUR exact savings.", "Cho Meo biết thẻ của bạn — xem số tiết kiệm chính xác của BẠN.")}</div>
+              <button onClick={pickCards} className="mt-2 bg-white text-brand rounded-full px-4 py-1.5 text-sm font-semibold hover:bg-brand-light transition">
+                💳 {L(lang, "Pick the cards you have", "Chọn thẻ bạn đang có")}
+              </button>
+            </>
           )}
         </div>
 
@@ -287,7 +295,9 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
           <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="font-semibold text-slate-800 truncate">{marketBest.card.product} <span className="text-brand">{pct(marketBest.rule.rate)}%</span></div>
-              <div className="text-xs text-slate-500">{marketBest.card.bank} · {L(lang, "best card for this", "thẻ tốt nhất cho mục này")}</div>
+              <div className="text-xs text-slate-500">{marketBest.card.bank} · {ownedStates.length === 0
+                ? L(lang, "if you open a NEW card — best for this", "nếu mở thẻ MỚI — tốt nhất cho mục này")
+                : L(lang, "best card for this", "thẻ tốt nhất cho mục này")}</div>
             </div>
             {ownsMarketBest ? (
               <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">{L(lang, "In wallet ✓", "Có trong ví ✓")}</span>
@@ -348,7 +358,7 @@ export default function BuyFlow({ ownedStates, lang, onAddCards }: Props) {
         ) : (
           <div className="px-4 py-3 bg-amber-50 text-amber-800 text-sm flex items-center justify-between gap-3 border-t border-amber-100">
             <span>{L(lang, "Add your cards to personalise this.", "Thêm thẻ để cá nhân hoá.")}</span>
-            <button onClick={onAddCards} className="bg-brand text-white rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap hover:bg-brand-dark">{L(lang, "Add cards", "Thêm thẻ")}</button>
+            <button onClick={pickCards} className="bg-brand text-white rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap hover:bg-brand-dark">{L(lang, "Add cards", "Thêm thẻ")}</button>
           </div>
         )}
       </div>

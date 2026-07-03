@@ -21,6 +21,7 @@ import ShoppingTrips from "./components/ShoppingTrips";
 // CashOutCard (payout preview) intentionally NOT mounted yet — saved for the
 // post-launch payout stage. See Outbox/MeoSanSales-Payout-Architecture-and-Compliance-Plan.
 import DealsTab from "./components/DealsTab";
+import CardOnboarding from "./components/CardOnboarding";
 import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
 interface OwnedCard {
@@ -52,6 +53,7 @@ const CATEGORIES: { key: SpendCategory; emoji: string }[] = [
 ];
 
 const REMINDER_LEAD_DAYS = 3;
+const KEY_CARD_PROMPT = "vicard.cardprompt.v1";
 const KEY_OWNED = "vicard.owned.v1";
 const KEY_LOG = "vicard.log.v1";
 const KEY_PAID = "vicard.paid.v1";
@@ -160,6 +162,36 @@ export default function App() {
       if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
     }
   }, [tab, runTour]);
+
+  // "Bạn có thẻ nào?" onboarding (UX review P1 #4 — the biggest trust lever).
+  // Auto-opens once for card-less visitors, but only AFTER the product tour is
+  // done so the two never stack. Any answer (save / none / dismiss) is
+  // remembered and it never auto-opens again; BuyFlow can reopen it on demand.
+  const [showCardPicker, setShowCardPicker] = useState(false);
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    if (owned.length > 0) return;
+    if (runTour || !localStorage.getItem("mss_tour_done")) return;
+    if (localStorage.getItem(KEY_CARD_PROMPT)) return;
+    const id = window.setTimeout(() => setShowCardPicker(true), 600);
+    return () => window.clearTimeout(id);
+  }, [owned.length, runTour]);
+  function cardPickerSave(ids: string[]) {
+    setOwned((prev) => [
+      ...prev,
+      ...ids.filter((id) => !prev.some((o) => o.id === id)).map((id) => ({ id, statementDay: 1, dueDay: 15 })),
+    ]);
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "picked");
+    setShowCardPicker(false);
+  }
+  function cardPickerNone() {
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "none");
+    setShowCardPicker(false);
+  }
+  function cardPickerClose() {
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "dismissed");
+    setShowCardPicker(false);
+  }
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);
@@ -417,9 +449,10 @@ export default function App() {
       <CookieConsent lang={lang} />
       <ShoppingTripInterstitial lang={lang} />
       <ShoppingTrips lang={lang} />
+      <CardOnboarding lang={lang} open={showCardPicker} onSave={cardPickerSave} onNone={cardPickerNone} onClose={cardPickerClose} />
 
       {tab === "buy" ? (
-        <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} /></main>
+        <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} onPickCards={() => setShowCardPicker(true)} /></main>
       ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
           <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
