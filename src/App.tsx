@@ -455,11 +455,11 @@ export default function App() {
         <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} onPickCards={() => setShowCardPicker(true)} /></main>
       ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
+          <RewardsHub bestCardLabel={bestCardLabel} lang={lang} onPickCards={() => setShowCardPicker(true)} />
         </main>
       ) : tab === "deals" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <DealsTab lang={lang} />
+          <DealsTab lang={lang} ownedStates={ownedStates} onPickCards={() => setShowCardPicker(true)} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">
