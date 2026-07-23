@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CARDS,
   bestCardFor,
@@ -8,11 +8,22 @@ import {
 } from "./cards";
 import AccountBar from "./components/AccountBar";
 import RewardsHub from "./components/RewardsHub";
-import Wishlist from "./components/Wishlist";
 import { useCloudSync, type AppData } from "./lib/useCloudSync";
 import { sourcesFor } from "./rewardSources";
-import { cardApplyLink, hasAnyAffiliate } from "./links";
+import { cardApplyLink, hasCardAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
+import BuyFlow from "./BuyFlow";
+import MoneyInput from "./components/MoneyInput";
+import InstallPrompt from "./components/InstallPrompt";
+import CookieConsent from "./components/CookieConsent";
+import { trackView, trackEvent, tabFromPath } from "./lib/track";
+import ShoppingTripInterstitial from "./components/ShoppingTripInterstitial";
+import ShoppingTrips from "./components/ShoppingTrips";
+// CashOutCard (payout preview) intentionally NOT mounted yet — saved for the
+// post-launch payout stage. See Outbox/MeoSanSales-Payout-Architecture-and-Compliance-Plan.
+import DealsTab from "./components/DealsTab";
+import CardOnboarding from "./components/CardOnboarding";
+import ProductTour, { DEFAULT_TOUR_STEPS } from "./components/tour/ProductTour";
 
 interface OwnedCard {
   id: string;
@@ -43,6 +54,7 @@ const CATEGORIES: { key: SpendCategory; emoji: string }[] = [
 ];
 
 const REMINDER_LEAD_DAYS = 3;
+const KEY_CARD_PROMPT = "vicard.cardprompt.v1";
 const KEY_OWNED = "vicard.owned.v1";
 const KEY_LOG = "vicard.log.v1";
 const KEY_PAID = "vicard.paid.v1";
@@ -57,7 +69,7 @@ function load<T>(key: string, fallback: T): T {
 }
 
 function formatVND(n: number): string {
-  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "d";
+  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
 }
 function midnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -128,10 +140,70 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"wallet" | "rewards" | "wishlist">("wallet");
-  const [category, setCategory] = useState<SpendCategory>("dining");
-  const [recAmount, setRecAmount] = useState<number>(0);
-  const recommendation = useMemo(() => bestCardFor(category, ownedStates), [category, ownedStates]);
+  const [tab, setTabState] = useState<"buy" | "wallet" | "rewards" | "deals">(tabFromPath);
+  // Tab changes become SPA page views (/, /wallet, /rewards, /deals) so
+  // Cloudflare Web Analytics can finally see more than "/".
+  const setTab = useCallback((next: "buy" | "wallet" | "rewards" | "deals") => {
+    setTabState(next);
+    trackView(next === "buy" ? "/" : "/" + next);
+  }, []);
+
+  // First-time product tour (Meo instructor + voice). Runs once, on the Buy tab.
+  const [runTour, setRunTour] = useState(false);
+  const tourSteps = useMemo(
+    () => DEFAULT_TOUR_STEPS.map((s) => ({ ...s, beforeStep: () => setTab("buy") })),
+    []
+  );
+  useEffect(() => {
+    if (typeof localStorage !== "undefined" && !localStorage.getItem("mss_tour_done")) {
+      const id = window.setTimeout(() => setRunTour(true), 800);
+      return () => window.clearTimeout(id);
+    }
+  }, []);
+  // If the user navigates away from the Buy tab mid-tour, they've taken the
+  // wheel — dismiss the tour instead of leaving a stale spotlight glued to the
+  // old position over the new view.
+  useEffect(() => {
+    if (tab !== "buy" && runTour) {
+      setRunTour(false);
+      if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
+    }
+  }, [tab, runTour]);
+
+  // "Bạn có thẻ nào?" onboarding (UX review P1 #4 — the biggest trust lever).
+  // Auto-opens once for card-less visitors, but only AFTER the product tour is
+  // done so the two never stack. Any answer (save / none / dismiss) is
+  // remembered and it never auto-opens again; BuyFlow can reopen it on demand.
+  const [showCardPicker, setShowCardPickerState] = useState(false);
+  const setShowCardPicker = useCallback((open: boolean) => {
+    if (open) trackEvent("pick-cards");
+    setShowCardPickerState(open);
+  }, []);
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    if (owned.length > 0) return;
+    if (runTour || !localStorage.getItem("mss_tour_done")) return;
+    if (localStorage.getItem(KEY_CARD_PROMPT)) return;
+    const id = window.setTimeout(() => setShowCardPicker(true), 600);
+    return () => window.clearTimeout(id);
+  }, [owned.length, runTour]);
+  function cardPickerSave(ids: string[]) {
+    setOwned((prev) => [
+      ...prev,
+      ...ids.filter((id) => !prev.some((o) => o.id === id)).map((id) => ({ id, statementDay: 1, dueDay: 15 })),
+    ]);
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "picked");
+    trackEvent("cards-saved");
+    setShowCardPicker(false);
+  }
+  function cardPickerNone() {
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "none");
+    setShowCardPicker(false);
+  }
+  function cardPickerClose() {
+    if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "dismissed");
+    setShowCardPicker(false);
+  }
 
   function bestCardLabel(cat: SpendCategory): string | undefined {
     const rec = bestCardFor(cat, ownedStates);
@@ -270,39 +342,71 @@ export default function App() {
     </section>
   );
 
+  // Group the addable cards by bank so the list reads as collapsible sections
+  // instead of one long flat list.
+  const banksToAdd = (() => {
+    const groups = new Map<string, CardProduct[]>();
+    for (const c of availableToAdd) {
+      const arr = groups.get(c.bank) ?? [];
+      arr.push(c);
+      groups.set(c.bank, arr);
+    }
+    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+
   const addCardSection = (
     <section>
       <h2 className="text-lg font-semibold mb-3">{t(lang, "addACard")}</h2>
       <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-4 space-y-3">
         <p className="text-sm text-slate-600">{t(lang, "tickEvery")}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {availableToAdd.map((c) => {
-            const checked = selectedIds.includes(c.id);
-            const applyUrl = cardApplyLink(c.bank);
-            return (
-              <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
-                <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
-                  <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
-                  <span className="min-w-0">
-                    <span className="font-medium text-slate-700">{c.product}</span>
-                    <span className="block text-xs text-slate-400">{c.bank}</span>
-                  </span>
-                </button>
-                {applyUrl && (
-                  <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
-                    {t(lang, "apply")} ↗
-                  </a>
-                )}
-              </div>
-            );
-          })}
-          {availableToAdd.length === 0 && <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>}
-        </div>
+        {availableToAdd.length === 0 ? (
+          <p className="text-slate-400 text-sm">{t(lang, "allAdded")}</p>
+        ) : (
+          <div className="space-y-2">
+            {banksToAdd.map(([bank, cards], idx) => {
+              const selInBank = cards.filter((c) => selectedIds.includes(c.id)).length;
+              return (
+                <details key={bank} open={idx === 0} className="group border border-slate-200 rounded-lg overflow-hidden">
+                  <summary className="cursor-pointer list-none px-3 py-2.5 flex items-center justify-between gap-2 bg-slate-50 hover:bg-slate-100">
+                    <span className="font-medium text-slate-700 text-sm min-w-0 truncate">{bank}</span>
+                    <span className="shrink-0 flex items-center gap-2 text-xs text-slate-400">
+                      {selInBank > 0 && <span className="text-brand font-medium">{selInBank} ✓</span>}
+                      <span>{cards.length}</span>
+                      <span className="transition-transform group-open:rotate-180">▾</span>
+                    </span>
+                  </summary>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+                    {cards.map((c) => {
+                      const checked = selectedIds.includes(c.id);
+                      const applyUrl = cardApplyLink(c.bank);
+                      return (
+                        <div key={c.id} className={"flex items-center gap-2 text-sm border rounded-lg px-3 py-2 transition " + (checked ? "border-brand bg-brand-light" : "border-slate-200 bg-white hover:border-brand")}>
+                          <button onClick={() => toggleSelect(c.id)} className="flex items-center gap-2 text-left flex-1 min-w-0">
+                            <span className={"w-4 h-4 rounded flex items-center justify-center text-[10px] text-white shrink-0 " + (checked ? "bg-brand" : "bg-slate-200")}>{checked ? "✓" : ""}</span>
+                            <span className="min-w-0">
+                              <span className="font-medium text-slate-700">{c.product}</span>
+                              <span className="block text-xs text-slate-400">{c.bank}</span>
+                            </span>
+                          </button>
+                          {applyUrl && (
+                            <a href={applyUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-brand border border-brand rounded-full px-2 py-1 hover:bg-brand hover:text-white shrink-0">
+                              {t(lang, "apply")} ↗
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
         <button onClick={addSelected} disabled={selectedIds.length === 0} className="w-full bg-brand text-white rounded-lg py-2.5 font-medium hover:bg-brand-dark disabled:opacity-40">
           {selectedIds.length === 0 ? t(lang, "selectToAdd") : t(lang, "addNCards", { n: selectedIds.length })}
         </button>
         <p className="text-xs text-slate-400">{t(lang, "newCardsNote")}</p>
-        {hasAnyAffiliate() && (
+        {hasCardAffiliate() && (
           <p className="text-[11px] text-slate-400 leading-snug">{t(lang, "applyAffiliate")}</p>
         )}
       </div>
@@ -320,44 +424,54 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20">
+      <ProductTour
+        run={runTour}
+        steps={tourSteps}
+        onFinish={() => {
+          setRunTour(false);
+          if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
+        }}
+      />
       <header className="bg-brand text-white">
         <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Ví Thẻ</h1>
-            <p className="text-brand-light/90 text-sm">{t(lang, "tagline")}</p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src="/mascot.png" alt="Meo" className="w-10 h-10 rounded-full bg-white/20 object-cover shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold leading-none truncate">Mẹo săn sales</h1>
+              <p className="text-brand-light/90 text-xs sm:text-sm mt-1 truncate">{t(lang, "tagline")}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {langBtn}
-            <button onClick={enableReminders} className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5">
-              {notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+            <button
+              onClick={enableReminders}
+              aria-label={notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+              title={notifyOn ? t(lang, "remindersOn") : t(lang, "enableReminders")}
+              className="bg-white/15 hover:bg-white/25 rounded-full w-8 h-8 flex items-center justify-center text-sm"
+            >
+              {notifyOn ? "🔔" : "🔕"}
             </button>
             <AccountBar />
           </div>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-5 pt-4">
-        <div className="flex gap-1 bg-slate-100 rounded-full p-1">
-          <button onClick={() => setTab("wallet")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wallet" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabWallet")}
-          </button>
-          <button onClick={() => setTab("rewards")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "rewards" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabRewards")}
-          </button>
-          <button onClick={() => setTab("wishlist")} className={"flex-1 text-sm font-medium rounded-full py-2 transition " + (tab === "wishlist" ? "bg-white text-brand shadow-sm" : "text-slate-500")}>
-            {t(lang, "tabWishlist")}
-          </button>
-        </div>
-      </div>
+      <InstallPrompt lang={lang} />
+      <CookieConsent lang={lang} />
+      <ShoppingTripInterstitial lang={lang} />
+      <ShoppingTrips lang={lang} />
+      <CardOnboarding lang={lang} open={showCardPicker} onSave={cardPickerSave} onNone={cardPickerNone} onClose={cardPickerClose} />
 
-      {tab === "rewards" ? (
+      {tab === "buy" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} onPickCards={() => setShowCardPicker(true)} /></main>
+      ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <RewardsHub bestCardLabel={bestCardLabel} lang={lang} />
+          <RewardsHub bestCardLabel={bestCardLabel} lang={lang} onPickCards={() => setShowCardPicker(true)} />
         </main>
-      ) : tab === "wishlist" ? (
+      ) : tab === "deals" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
-          <Wishlist notifyOn={notifyOn} lang={lang} />
+          <DealsTab lang={lang} ownedStates={ownedStates} onPickCards={() => setShowCardPicker(true)} />
         </main>
       ) : (
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-8">
@@ -418,10 +532,10 @@ export default function App() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-sm flex-1">
+                <div className="block text-sm flex-1">
                   <span className="text-slate-600">{t(lang, "amount")}</span>
-                  <input type="number" min={0} step={10000} value={logAmount || ""} onChange={(e) => setLogAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-                </label>
+                  <MoneyInput value={logAmount} onChange={setLogAmount} lang={lang} />
+                </div>
               </div>
               {logAmount > 0 && (() => {
                 const rec = bestCardFor(logCat, ownedStates);
@@ -437,7 +551,7 @@ export default function App() {
                         {sourcesFor(logCat).map((src, i) => (
                           <span key={src.name}>
                             {i > 0 ? ", " : ""}
-                            <a href={src.url} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline" title={src.note}>{src.name}</a>
+                            <a href={rewardLink(src.name, src.url)} target="_blank" rel="noreferrer" className="text-amber-700 hover:underline" title={src.note}>{src.name}</a>
                           </span>
                         ))}
                       </div>
@@ -464,82 +578,6 @@ export default function App() {
             )}
           </section>
         )}
-
-        <section>
-          <h2 className="text-lg font-semibold mb-3">{t(lang, "whichCard")}</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {CATEGORIES.map((c) => (
-              <button key={c.key} onClick={() => setCategory(c.key)} className={"px-3 py-1.5 rounded-full text-sm border transition " + (category === c.key ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand")}>
-                {catLabel(lang, c.key)}
-              </button>
-            ))}
-          </div>
-          {owned.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-slate-500">{t(lang, "addToGetRec")}</div>
-          ) : recommendation ? (() => {
-            const recCard = recommendation.card;
-            const os = ownedStates.find((s) => s.id === recCard.id);
-            const cap = os?.capVND != null ? os.capVND : recCard.totalCapVND ?? null;
-            const used = os?.usedThisPeriodVND ?? 0;
-            const remaining = cap != null ? Math.max(0, cap - used) : null;
-            const est = recAmount > 0 ? recAmount * recommendation.rule.rate : 0;
-            const estShown = remaining != null ? Math.min(est, remaining) : est;
-            const needsRegister = /regist/i.test(recommendation.rule.note ?? "") || /regist/i.test(recCard.notes ?? "");
-            const nearCap = remaining != null && cap != null && remaining > 0 && remaining <= cap * 0.2;
-            const exceeded = remaining != null && recAmount > 0 && est > remaining;
-            return (
-            <div className="rounded-xl bg-white shadow-sm border border-slate-100 p-5">
-              <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">{t(lang, "bestCardFor", { cat: catLabel(lang, category) })}</div>
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <div className="font-semibold text-slate-800">{recCard.product}</div>
-                  <div className="text-sm text-slate-500">{recCard.bank}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{t(lang, "verifiedConfirm", { d: fmtVerified(recCard.lastVerified) })}</div>
-                </div>
-                <div className="text-3xl font-bold text-brand">{Math.round(recommendation.rule.rate * 100)}%</div>
-              </div>
-
-              <label className="block text-sm mt-4">
-                <span className="text-slate-600">{t(lang, "howMuchSpend")}</span>
-                <input type="number" min={0} step={10000} value={recAmount || ""} onChange={(e) => setRecAmount(+e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2" />
-              </label>
-              {recAmount > 0 && (
-                <div className="mt-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
-                  {t(lang, "youGetBack", { x: formatVND(estShown) })}
-                </div>
-              )}
-
-              {exceeded && (
-                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "capExceeded")}</div>
-              )}
-              {!exceeded && nearCap && remaining != null && (
-                <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{t(lang, "nearCap", { x: formatVND(remaining) })}</div>
-              )}
-              {needsRegister && (
-                <div className="mt-2 text-xs text-violet-700 bg-violet-50 rounded-lg px-3 py-2">{t(lang, "registerReminder")}</div>
-              )}
-              {category === "foreign" && (
-                <div className="mt-2 text-xs text-slate-500">{t(lang, "fxNote")}</div>
-              )}
-
-              {sourcesFor(category).length > 0 && (
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <div className="text-xs font-medium text-slate-500 mb-1.5">{t(lang, "stackMore")}</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {sourcesFor(category).map((src) => (
-                      <a key={src.name} href={src.url} target="_blank" rel="noreferrer" title={src.note} className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-100">
-                        {src.name} ↗
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            );
-          })() : (
-            <div className="text-slate-500">{t(lang, "noRec")}</div>
-          )}
-        </section>
 
         <section>
           <h2 className="text-lg font-semibold mb-3">{t(lang, "myWallet")} ({owned.length})</h2>
@@ -627,9 +665,38 @@ export default function App() {
 
         <footer className="text-center text-xs text-slate-400 pt-4">
           {t(lang, "footer")}
+          <div className="pt-2">
+            <a href="/privacy.html" className="underline hover:text-slate-600">{t(lang, "privacyLink")}</a>
+            <span className="mx-2">·</span>
+            <a href="/affiliate-disclosure.html" className="underline hover:text-slate-600">{t(lang, "disclosureLink")}</a>
+          </div>
+          <div className="pt-3 text-slate-500">
+            {t(lang, "supportTitle")}{" "}
+            <a href="mailto:support@meosansales.com" className="text-brand underline hover:text-brand-dark">support@meosansales.com</a>
+          </div>
         </footer>
       </main>
       )}
+
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-100">
+        <div className="max-w-2xl mx-auto flex">
+          {([
+            ["buy", "🏠", lang === "vi" ? "Mua gì?" : "Buy"],
+            ["wallet", "👛", t(lang, "tabWallet")],
+            ["rewards", "🎯", t(lang, "tabRewards")],
+            ["deals", "🏷️", t(lang, "tabDeals")],
+          ] as const).map(([key, icon, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={"flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition " + (tab === key ? "text-brand" : "text-slate-400")}
+            >
+              <span className="text-lg leading-none">{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

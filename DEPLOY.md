@@ -65,3 +65,32 @@ succeeded, the site is up, and flag any errors.
 ### If the build fails
 The most likely cause is a TypeScript error. The code type-checks clean locally,
 but if Netlify complains, copy me the error from the deploy log and I'll fix it.
+
+## Server-side price reader (/api/price) — added 2026-06-30
+
+The app now ships a Cloudflare **Worker** (`worker/index.ts`) alongside the static SPA.
+It serves the built site via the `ASSETS` binding and adds one endpoint:
+
+    GET /api/price?url=<product url>  →  { price, currency:"VND", title, source }
+
+It fetches the product page on Cloudflare's edge (no browser CORS limit) and reads the
+price from JSON-LD + OpenGraph/meta tags. Hosts are allow-listed (Shopee/Lazada/Tiki/
+TGDĐ/CellphoneS/FPT/ShopDunk/… ) so it can't be abused as an open proxy. JS-walled pages
+(esp. Shopee) ship no price in their HTML → returns `price:null` and the app asks the user
+to type the amount. "Mua gì?" calls this automatically when a bare product link is pasted.
+
+### Files to upload for this change
+- `worker/index.ts`  (NEW)
+- `wrangler.jsonc`    (now has `"main": "worker/index.ts"` + `assets.binding: "ASSETS"`)
+- `src/BuyFlow.tsx`   (calls /api/price, debounced, with reading/failed states)
+- `src/components/StoreDiscovery.tsx`  (from the earlier merge)
+
+### Local testing
+`vite dev` does NOT serve `/api/price`. To test the endpoint locally run the Worker:
+
+    npm run build        # produces dist/
+    npx wrangler dev     # serves SPA + /api/price at http://localhost:8787
+
+### Deploy
+GitHub upload → Cloudflare build runs `npm run build` then `wrangler deploy`, which bundles
+the Worker and serves `dist/` through it. No env vars or secrets needed for this endpoint.

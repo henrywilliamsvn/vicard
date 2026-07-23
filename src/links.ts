@@ -33,13 +33,28 @@ export const AFFILIATE: AffiliateConfig = {
   referralUrls: {
     // TODO paste your referral links, e.g.:
     // ShopBack: "https://www.shopback.com/vn?raf=YOURCODE",
-    ShopBack: undefined,
+    ShopBack: "https://app.shopback.com/uNejSgC7b4b",
     "AccessTrade / Adpia": undefined,
     "Shopee Xu / ShopeePay": undefined,
     "Lazada vouchers / LazWallet": undefined,
-    MoMo: undefined,
-    ZaloPay: undefined,
-    Klook: undefined,
+    "TikTok Shop": "https://shorten.asia/4a5fHmSn",
+    Tiki: "https://shorten.asia/6k7T9nqN",
+    // Shopee VN via Adpia (approved June 26) — redirects to shopee.vn with tracking.
+    Shopee: "https://adpvn.top/s/4kZLA",
+    Lazada: undefined, // pending — add the Adpia Lazada deeplink here when generated
+
+    MoMo: "https://onelink.momo.vn/WZPv/MsyZKIuN?utm_source=referral_others",
+    ZaloPay: "https://onelink.zalopay.vn/cross-border-referral?referral_code=8HA3KVUN",
+    Klook: "https://s.klook.com/c/l3PZWW0j3V",
+    Traveloka: "https://shorten.asia/1cg6CF37",
+    // Involve Asia campaigns (property approved June 26). Paste each deeplink
+    // here once generated in IA → the source starts earning. Until then the app
+    // falls back to the plain public URL in rewardSources.ts (still works).
+    AliExpress: "https://invl.me/clnkyr2", // IA — AliExpress (Global) CPS
+    Taobao: "https://invl.me/clnkyqo",     // IA — Taobao CPS
+    Alibaba: "https://invl.me/clnkyr5",    // IA — Alibaba CPS
+    Banggood: "https://invl.me/clnkyr9",   // IA — Banggood (Global)
+    KKday: "https://invl.me/clnkyrd",      // IA — KKday Global CPS
   },
 
   cardApplyUrls: {
@@ -52,24 +67,70 @@ export const AFFILIATE: AffiliateConfig = {
   cardApplyFallback: undefined,
 };
 
+// Official credit-card pages, keyed by `bank` in cards.ts. These are the
+// honest, always-working fallback for "Apply" when no affiliate link is set yet
+// — the user still gets to the right place to open the card. When you add an
+// affiliate apply link (cardApplyUrls / cardApplyFallback) it takes priority and
+// the button starts earning, with zero other changes. Verified June 26, 2026.
+export const BANK_APPLY_PAGES: Record<string, string> = {
+  VPBank: "https://www.vpbank.com.vn/ca-nhan/the-tin-dung",
+  "Cake (VPBank)": "https://cake.vn/credit-card",
+  "Cake (VPBank) / Be": "https://cake.vn/credit-card",
+  VIB: "https://www.vib.com.vn/vn/the-tin-dung",
+  UOB: "https://www.uob.com.vn/personal/cards/index.page",
+  OCB: "https://ocb.com.vn/vi/ca-nhan/the",
+  VietinBank: "https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/danh-sach-the",
+  Vietcombank: "https://www.vietcombank.com.vn/en/Personal/SPDV/The",
+  Techcombank: "https://techcombank.com/en/personal/spend/cards/credit-card",
+  TPBank: "https://tpb.vn/khach-hang-ca-nhan/the-tin-dung",
+  Shinhan: "https://shinhan.com.vn/vi/credit-card-application",
+  Sacombank: "https://www.sacombank.com.vn/en/personal/cards/credit-cards.html",
+  HSBC: "https://www.hsbc.com.vn/en-vn/credit-cards/products/",
+  ACB: "https://acb.com.vn/en/personal-cards/credit-card",
+  "Standard Chartered": "https://www.sc.com/vn/credit-cards/",
+  SeABank: "https://seaoffers.seabank.com.vn/the-tin-dung/",
+  "MB Bank": "https://www.mbbank.com.vn/26/46/213/san-pham-all/the-tin-dung",
+  "Home Credit": "https://www.homecredit.vn/the-tin-dung-online",
+  HDBank: "https://hdbank.com.vn/personal/product/the/the-tin-dung",
+  BIDV: "https://www.bidv.com.vn/uudaithe/",
+  // MSB, Eximbank, KBank: no official card URL confirmed → they fall back to the
+  // Google-search safety net in cardApplyLink() (always lands on the bank's card page).
+};
+
 // Referral URL for a reward source (falls back to the plain public URL).
 export function rewardLink(name: string, fallbackUrl: string): string {
   return AFFILIATE.referralUrls[name] ?? fallbackUrl;
 }
 
-// Affiliate "apply" URL for a card's bank, or undefined if none configured.
-export function cardApplyLink(bank: string): string | undefined {
-  return AFFILIATE.cardApplyUrls[bank] ?? AFFILIATE.cardApplyFallback;
+// "Apply for this card" URL for a bank. Priority:
+//   1. affiliate link (cardApplyUrls / cardApplyFallback) — EARNS
+//   2. the bank's official credit-card page — honest, always works
+//   3. a Google search for the bank's card — last-resort safety net
+// Never returns undefined, so the Apply button always has somewhere to go.
+export function cardApplyLink(bank: string): string {
+  const affiliate = AFFILIATE.cardApplyUrls[bank] ?? AFFILIATE.cardApplyFallback;
+  if (affiliate) return affiliate;
+  return (
+    BANK_APPLY_PAGES[bank] ??
+    `https://www.google.com/search?q=${encodeURIComponent(bank + " thẻ tín dụng đăng ký")}`
+  );
+}
+
+// True when a card "Apply" link actually EARNS (affiliate apply link set).
+// Used to gate the apply-commission disclosure so we only claim affiliate when
+// it's true — the official-page fallbacks above are NOT affiliate links.
+export function hasCardAffiliate(): boolean {
+  return (
+    Object.values(AFFILIATE.cardApplyUrls).some(Boolean) ||
+    Boolean(AFFILIATE.cardApplyFallback)
+  );
 }
 
 // True once ANY affiliate/referral link is live — used to decide whether to
 // show the commission disclosure (we only disclose when it's actually true).
 export function hasAnyAffiliate(): boolean {
   const hasReferral = Object.values(AFFILIATE.referralUrls).some(Boolean);
-  const hasCard =
-    Object.values(AFFILIATE.cardApplyUrls).some(Boolean) ||
-    Boolean(AFFILIATE.cardApplyFallback);
-  return hasReferral || hasCard;
+  return hasReferral || hasCardAffiliate();
 }
 
 // =============================================================================

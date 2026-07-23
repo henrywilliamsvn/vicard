@@ -1,0 +1,239 @@
+/* =========================================================================
+   MeoSanSales — Interactive Product Tour styles (Driver.js-free)
+   Self-drawn spotlight + custom React tooltip. Brand accent: #FF7A1A
+   ========================================================================= */
+
+/* ---- Spotlight overlay ----
+   A transparent rect over the highlighted element with a massive box-shadow
+   that dims everything else. pointer-events:none so it NEVER blocks clicks. */
+.mss-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483000;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.62);
+  outline: 3px solid rgba(255, 122, 26, 0.9);
+  outline-offset: 0;
+  pointer-events: none;
+  /* Moved with transform (not top/left): transform changes are ignored by the
+     Layout Instability API, so the spotlight no longer counts toward CLS. */
+  transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
+  will-change: transform;
+}
+.mss-overlay-full {
+  transform: none;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+/* =========================================================================
+   Tooltip card
+   ========================================================================= */
+.mss-tooltip {
+  position: fixed;
+  z-index: 2147483647; /* above the spotlight overlay */
+  pointer-events: auto;
+  box-sizing: border-box;
+  padding: 32px 18px 16px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 122, 26, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px -16px rgba(15, 23, 42, 0.45);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* pointer notch */
+.mss-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  transform: translateX(-50%) rotate(45deg);
+}
+.mss-tooltip[data-placement="bottom"]::after {
+  top: -7px;
+  border-left: 1px solid rgba(255, 122, 26, 0.18);
+  border-top: 1px solid rgba(255, 122, 26, 0.18);
+}
+.mss-tooltip[data-placement="top"]::after {
+  bottom: -7px;
+  border-right: 1px solid rgba(255, 122, 26, 0.18);
+  border-bottom: 1px solid rgba(255, 122, 26, 0.18);
+}
+
+/* ---- Mascot (raised above the card so it never covers the title) ---- */
+.mss-mascot-wrap {
+  position: absolute;
+  top: -58px;
+  left: 12px;
+  width: 84px;
+  height: 84px;
+  pointer-events: none;
+}
+.mss-mascot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.mss-mascot-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
+  background: #fff;
+  user-select: none;
+}
+.mss-mascot-ring {
+  position: absolute;
+  bottom: 6px;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 122, 26, 0.35) 0%, rgba(255, 122, 26, 0) 70%);
+}
+
+/* ---- Text ---- */
+.mss-title {
+  margin: 6px 0 6px;
+  padding-right: 76px; /* clear the mute button */
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+}
+.mss-body {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #475569;
+}
+
+/* ---- Mute toggle ---- */
+.mss-mute {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2410c;
+  background: #fff4ec;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.mss-mute:hover {
+  background: #ffe3cf;
+}
+
+/* ---- Progress dots ---- */
+.mss-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.mss-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.mss-dot:hover {
+  background: #fdba74;
+}
+.mss-dot.on {
+  width: 22px;
+  background: #ff7a1a;
+}
+
+/* ---- Actions ---- */
+.mss-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mss-nav {
+  display: flex;
+  gap: 8px;
+}
+.mss-skip {
+  font-size: 13px;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.mss-skip:hover {
+  color: #64748b;
+}
+.mss-prev {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.mss-prev:hover {
+  background: #f8fafc;
+}
+.mss-next {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #ff7a1a;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  box-shadow: 0 8px 16px -5px rgba(255, 122, 26, 0.6);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.mss-next:hover {
+  background: #ea6a0d;
+}
+.mss-next:active {
+  transform: translateY(1px);
+}
+
+/* Every interactive control stays clickable regardless of cascade. */
+.mss-mute,
+.mss-skip,
+.mss-prev,
+.mss-next,
+.mss-dots,
+.mss-dot {
+  pointer-events: auto;
+}
+
+/* ---- Respect reduced-motion preferences ---- */
+@media (prefers-reduced-motion: reduce) {
+  .mss-overlay,
+  .mss-tooltip,
+  .mss-mascot,
+  .mss-mascot-img,
+  .mss-mascot-ring {
+    animation: none !important;
+    transition: none !important;
+  }
+}

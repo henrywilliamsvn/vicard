@@ -33,12 +33,20 @@ export function useLang(): [Lang, (l: Lang) => void] {
 type Entry = { en: string; vi: string };
 
 const DICT = {
-  tagline: { en: "Which card to swipe, and when to pay.", vi: "Dùng thẻ nào, và khi nào cần trả." },
+  tagline: { en: "Which card to swipe, which deal to grab.", vi: "Quẹt thẻ nào, săn deal đâu — để Meo lo!" },
   remindersOn: { en: "Reminders on", vi: "Đã bật nhắc" },
   enableReminders: { en: "Enable reminders", vi: "Bật nhắc nhở" },
 
   tabWallet: { en: "Wallet", vi: "Ví thẻ" },
   tabRewards: { en: "Max rewards", vi: "Tối đa ưu đãi" },
+  tabDeals: { en: "Deals", vi: "Ưu đãi" },
+  dealsTitle: { en: "Deals right now", vi: "Ưu đãi đang có" },
+  dealsSub: {
+    en: "Hand-picked deals — tap to open. Links route through your affiliate, so qualifying buys earn.",
+    vi: "Ưu đãi chọn lọc — chạm để mở. Link đã gắn affiliate nên đơn hợp lệ sẽ sinh hoa hồng.",
+  },
+  dealsAll: { en: "All", vi: "Tất cả" },
+  dealsEmpty: { en: "No deals in this category yet.", vi: "Chưa có ưu đãi cho mục này." },
   tabWishlist: { en: "Wishlist", vi: "Muốn mua" },
 
   paymentsDue: { en: "{n} payment(s) due soon", vi: "{n} khoản sắp đến hạn" },
@@ -85,7 +93,7 @@ const DICT = {
   maxCashback: { en: "Max cashback", vi: "Hoàn tiền tối đa" },
   noCardsYet: { en: "No cards yet.", vi: "Chưa có thẻ nào." },
 
-  welcomeTitle: { en: "👋 Welcome to Ví Thẻ", vi: "👋 Chào mừng đến Ví Thẻ" },
+  welcomeTitle: { en: "👋 Welcome to Mẹo săn sales", vi: "👋 Chào mừng đến Mẹo săn sales" },
   welcomeBody: { en: "Add the cards you own and we'll tell you which one to swipe for the most cashback — and when each bill is due. Start below.", vi: "Thêm các thẻ bạn có, chúng tôi sẽ mách bạn nên quẹt thẻ nào để hoàn tiền nhiều nhất — và khi nào tới hạn thanh toán. Bắt đầu bên dưới." },
   confirmRemove: { en: "Remove {card} from your wallet? Its dates and cashback settings will be lost.", vi: "Xoá {card} khỏi ví? Ngày tháng và thiết lập hoàn tiền của thẻ sẽ mất." },
 
@@ -98,16 +106,97 @@ const DICT = {
   newCardsNote: { en: "New cards start with statement day 1 and due day 15 — adjust each card's dates in your wallet above. Privacy-first: no bank login; everything stays on this device.", vi: "Thẻ mới mặc định ngày sao kê 1 và ngày đến hạn 15 — chỉnh lại trong ví ở trên. Bảo mật trước tiên: không cần đăng nhập ngân hàng; mọi dữ liệu nằm trên thiết bị này." },
   applyAffiliate: { en: "\"Apply\" links are affiliate links — we may earn a commission at no extra cost to you. We rank cards by what's best for you, never by what pays us.", vi: "Liên kết \"Mở thẻ\" là liên kết tiếp thị — chúng tôi có thể nhận hoa hồng mà bạn không tốn thêm phí. Thẻ luôn được xếp theo lợi ích của bạn, không theo hoa hồng." },
   footer: { en: "Reminders only fire while the app is open in your browser. Rates are a June 2026 draft and change often - confirm with your bank. Not financial advice.", vi: "Nhắc nhở chỉ hoạt động khi ứng dụng đang mở. Mức hoàn tiền là bản tháng 6/2026 và thay đổi thường xuyên - hãy kiểm tra với ngân hàng. Không phải tư vấn tài chính." },
+  privacyLink: { en: "Privacy Policy", vi: "Chính sách bảo mật" },
+  disclosureLink: { en: "Affiliate Disclosure", vi: "Công bố tiếp thị liên kết" },
+
+  // Trust & support
+  noSell: {
+    en: "🔒 We track your shopping trips to secure your cashback — we never sell your personal data to third parties.",
+    vi: "🔒 Chúng tôi chỉ theo dõi lượt mua sắm để đảm bảo hoàn tiền cho bạn — không bao giờ bán dữ liệu cá nhân của bạn cho bên thứ ba.",
+  },
+  supportTitle: { en: "Need help? We're a real team.", vi: "Cần hỗ trợ? Đội ngũ thật của chúng tôi luôn sẵn sàng." },
+  supportEmail: { en: "Email support", vi: "Gửi email hỗ trợ" },
+  cookieText: {
+    en: "🍪 We use on-device storage to run the app and tracking links to secure your cashback. We never sell your data.",
+    vi: "🍪 Chúng tôi dùng bộ nhớ trên thiết bị để chạy ứng dụng và liên kết theo dõi để đảm bảo hoàn tiền cho bạn. Chúng tôi không bao giờ bán dữ liệu của bạn.",
+  },
+  cookieAccept: { en: "Accept all", vi: "Đồng ý tất cả" },
+  cookieEssential: { en: "Essential only", vi: "Chỉ cần thiết" },
+  cookieMore: { en: "Learn more", vi: "Tìm hiểu thêm" },
+
+  // Shopping trips (reward tracking confirmation)
+  tripLogged: {
+    en: "✅ Trip to {m} logged — cashback (if you buy) appears within ~48h.",
+    vi: "✅ Đã ghi nhận chuyến mua sắm đến {m} — hoàn tiền (nếu mua) xuất hiện trong ~48h.",
+  },
+  tripsTitle: { en: "Shopping trips", vi: "Chuyến mua sắm" },
+  tripsBtn: { en: "Trips", vi: "Chuyến" },
+  tripsPending: { en: "Pending · ~48h", vi: "Đang chờ · ~48h" },
+  tripsEmpty: { en: "No trips yet. Tap a store to start.", vi: "Chưa có chuyến nào. Bấm vào một cửa hàng để bắt đầu." },
+  tripsNote: {
+    en: "We log each store you open so you can track your cashback. Pending rewards confirm within ~48h of a purchase.",
+    vi: "Chúng tôi ghi lại mỗi cửa hàng bạn mở để bạn theo dõi hoàn tiền. Hoàn tiền chờ xác nhận trong ~48h sau khi mua.",
+  },
+  tripsClear: { en: "Clear", vi: "Xoá" },
+
+  // Cash-out (non-live preview)
+  cashOutTitle: { en: "Cash out your cashback", vi: "Rút tiền hoàn lại" },
+  cashOutSoon: { en: "Coming soon", vi: "Sắp ra mắt" },
+  cashOutAvail: { en: "Available to withdraw", vi: "Có thể rút" },
+  cashOutThreshold: { en: "Min. withdrawal", vi: "Mức rút tối thiểu" },
+  cashOutProgress: { en: "{pct}% to your first cash-out", vi: "{pct}% đến lần rút đầu tiên" },
+  cashOutPending: { en: "Pending", vi: "Đang chờ xác nhận" },
+  cashOutFast: { en: "⚡ Fast-Track: get paid in 14 days (premium)", vi: "⚡ Rút nhanh: nhận tiền trong 14 ngày (gói cao cấp)" },
+  cashOutMethods: { en: "Planned: MoMo · ZaloPay · bank transfer · gift cards", vi: "Dự kiến: MoMo · ZaloPay · chuyển khoản · thẻ quà tặng" },
+  cashOutNote: {
+    en: "Preview only — withdrawals aren't live yet. The balance shown is illustrative.",
+    vi: "Chỉ là bản xem trước — tính năng rút tiền chưa hoạt động. Số dư chỉ mang tính minh hoạ.",
+  },
+
+  // Store discovery (search + personalised feed)
+  discPlaceholder: { en: "Search stores (Shopee, Tiki, MoMo…)", vi: "Tìm cửa hàng (Shopee, Tiki, MoMo…)" },
+  discNoResults: { en: "No stores match — try a shorter name.", vi: "Không tìm thấy cửa hàng — thử tên ngắn hơn." },
+  discUpTo: { en: "up to {n}%", vi: "tới {n}%" },
+  discFlash: { en: "⚡ Flash deals", vi: "⚡ Ưu đãi chớp nhoáng" },
+  discYourStores: { en: "Your stores", vi: "Cửa hàng của bạn" },
+  dealOpen: { en: "Open & earn cashback →", vi: "Mở & Hoàn tiền →" },
+  dealsForYou: { en: "💸 Deals for you", vi: "💸 Deal cho bạn" },
+
+  // Loyalty preview (non-live)
+  loyPreview: { en: "Preview", vi: "Bản xem trước" },
+  loySoon: { en: "Coming soon", vi: "Sắp ra mắt" },
+  loyTier: { en: "Your tier", vi: "Hạng của bạn" },
+  loyTierProg: { en: "220 Xu more → Mèo Vàng", vi: "Còn 220 Xu nữa → Mèo Vàng" },
+  loyWallet: { en: "Cashback wallet", vi: "Ví hoàn tiền" },
+  loyMissions: { en: "🎯 Today's missions", vi: "🎯 Nhiệm vụ hôm nay" },
+  loyM1: { en: "Open 1 deal · +20 Xu", vi: "Mở 1 deal · +20 Xu" },
+  loyM2: { en: "Invite a friend · +500 Xu", vi: "Mời bạn · +500 Xu" },
+  loyM3: { en: "Review a deal · +50 Xu", vi: "Đánh giá deal · +50 Xu" },
+  loyNote: {
+    en: "Tiers, Xu Meo & cashback wallet are in development — this is a design preview.",
+    vi: "Tích lũy hạng, Xu Meo & ví hoàn tiền đang được phát triển — đây là bản xem trước.",
+  },
+
+  // Premium upsell (shown to free users)
+  upsellTitle: { en: "Go Premium — earn more on every order", vi: "Nâng cấp Premium — kiếm nhiều hơn mỗi đơn" },
+  upsellB1: { en: "🏆 Climb tiers: Mèo Đồng → Kim Cương", vi: "🏆 Tích lũy hạng: Mèo Đồng → Kim Cương" },
+  upsellB2: { en: "🎯 Missions & Xu Meo rewards", vi: "🎯 Nhiệm vụ & Xu Meo — đổi thưởng" },
+  upsellB3: { en: "💸 Higher cashback at higher tiers", vi: "💸 Hoàn tiền cao hơn ở hạng cao" },
+  upsellB4: { en: "👛 Cashback wallet · MoMo/VietQR payouts", vi: "👛 Ví hoàn tiền · rút về MoMo/VietQR" },
+  upsellCta: { en: "Try Premium", vi: "Thử Premium" },
+  upsellNote: { en: "Coming soon — free to try.", vi: "Sắp ra mắt — dùng thử miễn phí." },
 
   // Rewards hub
-  rhLinkTitle: { en: "1 · Link up your rewards", vi: "1 · Kết nối các nguồn ưu đãi" },
+  rhLinkTitle: { en: "2 · Link up your rewards", vi: "2 · Kết nối các nguồn ưu đãi" },
   rhLinkSub: { en: "Set these up once. Tick each as you go — then every purchase can stack all of them.", vi: "Thiết lập một lần. Đánh dấu khi xong — sau đó mỗi lần mua đều cộng dồn được tất cả." },
   rhLinked: { en: "Linked", vi: "Đã kết nối" },
   rhAllLinked: { en: "🎉 All linked — you're set to stack on every purchase.", vi: "🎉 Đã kết nối hết — sẵn sàng cộng dồn cho mọi giao dịch." },
-  rhStackTitle: { en: "2 · Stack a purchase", vi: "2 · Cộng dồn cho một giao dịch" },
+  rhStackTitle: { en: "1 · How to optimize", vi: "1 · Hướng dẫn tối ưu" },
   rhStackSub: { en: "Pick what you're buying — follow the steps in order to layer every discount.", vi: "Chọn món bạn mua — làm theo thứ tự để xếp chồng mọi ưu đãi." },
   rhDealsTitle: { en: "3 · Deals right now", vi: "3 · Ưu đãi đang có" },
   rhDealsSub: { en: "A few deals worth grabbing today. Tap to open the source.", vi: "Vài ưu đãi đáng chú ý hôm nay. Chạm để mở nguồn." },
+  rhDealsMoved: { en: "Looking for deals? See the latest in the Deals tab 🏷️", vi: "Tìm ưu đãi? Xem mới nhất ở tab Ưu đãi 🏷️" },
+  rhLinkToggleHint: { en: "Tap to set up your reward sources", vi: "Chạm để thiết lập các nguồn ưu đãi" },
   open: { en: "Open", vi: "Mở" },
   setUp: { en: "Set up", vi: "Thiết lập" },
   rhPromoNote: { en: "Promo rates change constantly — always check each app's voucher tab before paying. Not financial advice.", vi: "Khuyến mãi thay đổi liên tục — luôn kiểm tra mục voucher của từng app trước khi trả. Không phải tư vấn tài chính." },
