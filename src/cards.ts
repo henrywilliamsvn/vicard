@@ -1,12 +1,16 @@
 // =============================================================================
 // Vietnam Credit Card Catalog  —  cards.ts
-// Comprehensive edition  ·  v0.3  ·  Expanded June 21, 2026
+// Comprehensive edition  ·  v0.4  ·  Rate-watch refresh August 1, 2026
 // =============================================================================
 //
-// v0.3 expands toward comprehensive coverage of the cashback cards Vietnamese
-// users actually carry (local + foreign banks + fintech). Confirm every rate on
-// the bank's official page; cards marked "(verify rates)" still need first-hand
-// confirmation. Citi Vietnam consumer cards migrated to UOB (July 2025).
+// v0.4 is the August 2026 monthly rate-watch refresh. Major repricing this
+// cycle: KBank Cashback Plus cut 10% -> 0.5% (05/03/2026), Sacombank Visa
+// Platinum Cashback re-launched as a transport/supermarket card, Techcombank
+// Visa Signature moved to a flat 5% domestic restaurants+hotels, and two new
+// best-in-class cards were added (Shinhan MyLife Platinum, VIB Max Card).
+// VN bank terms change often -- confirm every rate on the bank's official page;
+// cards marked "(verify rates)" still need first-hand confirmation.
+// Citi Vietnam consumer cards migrated to UOB (July 2025).
 //
 // Rates are decimals (0.05 = 5%). Caps and fees are in VND.
 // =============================================================================
@@ -66,18 +70,12 @@ export const CARDS: CardProduct[] = [
     product: "KBank Cashback Plus",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "up to 10% selected" },
-      { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
-      { category: "dining", rate: 0.10, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.10, capVND: null, period: "statement" },
-      { category: "entertainment", rate: 0.10, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.005, capVND: null, period: "statement", note: "cut from 10% effective 05/03/2026" },
     ],
-    totalCapVND: 1_000_000,
-    totalCapPeriod: "statement",
+    totalCapVND: null,
     annualFeeVND: null,
-    lastVerified: "2026-07-01",
-    notes: "Auto cashback on ALL spend; up to 10% selected. Cap tiered: 300k if spend <15M/statement, up to 1M if >=15M. Fast virtual card.",
+    lastVerified: "2026-08-01",
+    notes: "DOWNGRADED: KBank cut cashback from 10% to a flat 0.5% effective 05/03/2026. No longer best-in-class -- kept for existing holders only. Consider removal.",
   },
   {
     id: "shinhan-visa-cashback",
@@ -190,16 +188,16 @@ export const CARDS: CardProduct[] = [
     product: "VPBank StepUP",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.15, capVND: 600_000, period: "statement", note: "15% if spend >=10M/statement; else 6%. Excludes Shopee/bills/insurance" },
+      { category: "online", rate: 0.15, capVND: 1_500_000, period: "statement", note: "15% cap 1.5M if spend >=100M; 15% cap 700k if 10M-100M; 6% cap 300k if <10M. Excludes Shopee/ShopeeFood, online insurance, bills" },
       { category: "dining", rate: 0.04, capVND: 200_000, period: "statement", note: "4% if spend >=10M/statement; else 2%" },
       { category: "everything", rate: 0.001, capVND: null, period: "statement" },
     ],
-    totalCapVND: 600_000,
+    totalCapVND: 1_700_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     feeWaiver: "First-year fee waived with 3 txns of 300k within 30 days",
-    lastVerified: "2026-07-01",
-    notes: "Tiered: up to 15% online (cap 600k) + 4% dining (cap 200k) when spend >=10M/statement, else 6%/2%. 0.1% else.",
+    lastVerified: "2026-08-01",
+    notes: "Three spend tiers: >=100M/statement -> 15% online cap 1.5M; 10M-100M -> 15% cap 700k; <10M -> 6% cap 300k. Plus dining. Headline total up to 1,700,000/statement.",
   },
   {
     id: "tpbank-evo-visa",
@@ -381,15 +379,15 @@ export const CARDS: CardProduct[] = [
     product: "Techcombank Visa Signature",
     network: "Visa",
     rewards: [
-      { category: "dining", rate: 0.10, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.03, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.05, capVND: 5_000_000, period: "statement", note: "domestic restaurants only (VN merchant country code)" },
+      { category: "travel", rate: 0.05, capVND: 5_000_000, period: "statement", note: "domestic hotels; shares the 5M cap with dining" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
-    totalCapVND: 3_000_000,
+    totalCapVND: 5_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "Up to 10% dining + 3% travel, cap ~3M/month. Strong for diners.",
+    lastVerified: "2026-08-01",
+    notes: "Official T&C: 5% on domestic restaurants & hotels, cap 5,000,000/card account/month. Foreign spend and cash advances excluded. Cashback posts within 10 working days of the following month.",
   },
   {
     id: "techcombank-priority-visa-signature",
@@ -413,17 +411,17 @@ export const CARDS: CardProduct[] = [
     product: "Cake Freedom 2in1",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.20, capVND: null, period: "statement" },
-      { category: "dining", rate: 0.20, capVND: null, period: "statement" },
-      { category: "supermarket", rate: 0.20, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.20, capVND: null, period: "statement" },
+      { category: "online", rate: 0.20, capVND: 200_000, period: "statement" },
+      { category: "dining", rate: 0.20, capVND: 200_000, period: "statement" },
+      { category: "supermarket", rate: 0.20, capVND: 200_000, period: "statement", note: "MCC 5411: only the first txn per day counts" },
+      { category: "travel", rate: 0.20, capVND: 200_000, period: "statement" },
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: 1_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "20% across 5 categories, combined cap ~1M/month. Digital-native.",
+    lastVerified: "2026-08-01",
+    notes: "20% across 12 eligible industries (3 fixed + 2 self-chosen categories). Per-category cap 200k/statement; per-txn cap 50k (txn >=200k) or 10k (txn <200k); overall 1M/statement requires total settled spend >=5,000,000/statement.",
   },
   {
     id: "be-cake-2in1",
@@ -556,15 +554,15 @@ export const CARDS: CardProduct[] = [
     product: "Sacombank Visa Platinum Cashback",
     network: "Visa",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement" },
-      { category: "foreign", rate: 0.03, capVND: null, period: "statement", note: "foreign POS" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.168, capVND: 680_000, period: "statement", note: "MCC 4121/4789 transport; each txn must be >=100,000 VND; shares 680k cap" },
+      { category: "supermarket", rate: 0.068, capVND: 680_000, period: "statement", note: "MCC 5411/5499 supermarket & convenience; shares 680k cap" },
+      { category: "everything", rate: 0.0039, capVND: null, period: "statement", note: "unlimited" },
     ],
-    totalCapVND: 600_000,
+    totalCapVND: 680_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "5% online, 3% foreign POS, 0.5% other. Cap ~600k/statement.",
+    lastVerified: "2026-08-01",
+    notes: "REPRICED 2026: 16.8% transport + 6.8% supermarket/convenience (shared cap 680k/statement), 0.39% unlimited on everything else. Qualifying txns must be >=100,000 VND. Excludes fuel, bills, insurance, gold, e-wallet top-ups, financial MCCs.",
   },
   {
     id: "eximbank-visa-platinum-cashback",
@@ -617,15 +615,15 @@ export const CARDS: CardProduct[] = [
     product: "OCB JCB Platinum",
     network: "JCB",
     rewards: [
-      { category: "education", rate: 0.15, capVND: null, period: "statement" },
-      { category: "insurance", rate: 0.15, capVND: null, period: "statement" },
+      { category: "education", rate: 0.15, capVND: 300_000, period: "statement", note: "health/medical MCCs: hospitals, clinics, pharmacies" },
+      { category: "insurance", rate: 0.07, capVND: 150_000, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: 18_000_000,
     totalCapPeriod: "year",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "15% Education/Health/Insurance, up to ~18M/year. Great for tuition/insurance.",
+    lastVerified: "2026-08-01",
+    notes: "15% health/medical (cap 300k/period) + 7% insurance (cap 150k/period), headline up to 18M/year. Requires >=7 eligible txns per qualifying period. Insurance rate was cut from 15% to 7%.",
   },
   {
     id: "ocb-mastercard-platinum",
@@ -673,8 +671,47 @@ export const CARDS: CardProduct[] = [
     ],
     totalCapVND: null,
     annualFeeVND: null,
-    lastVerified: "2026-07-01",
-    notes: "Customisable: choose 1 category (dining/shopping/travel) for 15%, 10% online/foreign, 0.1% else. Cashback paid ~15 days.",
+    lastVerified: "2026-08-01",
+    notes: "CLOSED to new applicants -- VIB stopped issuing Super Card (along with 2in1 Plus and Financial) in favour of the Max Card membership model. Existing holders keep benefits: choose 1 category (dining/shopping/travel) for 15%, 10% online/foreign, 0.1% else. Cashback paid ~15 days.",
+  },
+  {
+    id: "shinhan-mylife-platinum",
+    bank: "Shinhan",
+    product: "Shinhan MyLife Platinum",
+    network: "Visa",
+    rewards: [
+      { category: "travel", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 4121 taxi/limousine" },
+      { category: "supermarket", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5411/5499/5412/5451" },
+      { category: "dining", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5812/5813/5814; bakery 5462 excluded" },
+      { category: "entertainment", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5815/5817/5818/4899/7832; digital games 5816 excluded" },
+      { category: "everything", rate: 0.004, capVND: null, period: "statement", note: "unlimited base" },
+    ],
+    totalCapVND: 1_200_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: 1_100_000,
+    feeWaiver: "Year 2 waived with >=110,000,000 spend in the prior year",
+    lastVerified: "2026-08-01",
+    notes: "NEW 2026. 10% reward points on 4 lifestyle groups, 300k cap each (1.2M total/statement), 0.4% unlimited base. Requires >=3,000,000 total spend across the groups. FX fee 2.9%. Strongly MCC-dependent.",
+  },
+  {
+    id: "vib-max-card",
+    bank: "VIB",
+    product: "VIB Max Card",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "Elite tier; 8% Pro, 5% Plus, 0% Starter" },
+      { category: "dining", rate: 0.10, capVND: null, period: "statement", note: "one of 5 selectable categories" },
+      { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.10, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.10, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.001, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 18_000_000,
+    totalCapPeriod: "year",
+    annualFeeVND: 4_000_000,
+    feeWaiver: "Starter tier is free; paid tiers are monthly subscriptions (min 1 quarter), switchable in-app",
+    lastVerified: "2026-08-01",
+    notes: "NEW: VIB's membership-package card. Four tiers -- Starter (free, no boost), Plus (5%), Pro (8%), Elite (10%) -- up to 10% across 5 categories, max ~18M/year. Package fee up to 333,333/month; breakeven roughly 30M (Plus), 50M (Pro), 100M (Elite) spend per statement. Only worth it for high spenders who pick the right tier.",
   },
   {
     id: "homecredit-home-card",
