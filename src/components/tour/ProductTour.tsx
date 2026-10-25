@@ -18,6 +18,14 @@ export type TourStep = {
   /** Per-step mascot expression image. Falls back to /mascot.png if missing. */
   image?: string;
   /**
+   * Which tab this step's target lives on. Added 15 Aug 2026 with the
+   * restructure: the steps used to all sit on one tab, so App.tsx could just
+   * force "buy" for every step. They no longer do — the paste box is on Xem
+   * giá and the price alert moved to Tối đa ưu đãi — so each step has to say
+   * where it lives or it spotlights an element that isn't mounted.
+   */
+  tab?: "price" | "buy" | "wallet" | "rewards" | "deals";
+  /**
    * Optional hook run *before* the step shows — use it to switch tabs so the
    * target element exists (e.g. open the "Ví Thẻ" tab for step 2).
    */
@@ -26,14 +34,27 @@ export type TourStep = {
 
 export const DEFAULT_TOUR_STEPS: TourStep[] = [
   {
+    // The new front door. Step 1 must be the very first thing a new visitor
+    // sees, and since 15 Aug that is the paste box on Xem giá — not the search
+    // field one tab over.
+    target: "#paste-input",
+    tab: "price",
+    title: "🔗 Dán link — Meo xem giá giùm",
+    body: "Bắt đầu ở đây nha! Dán link Shopee, Lazada hay TikTok vào ô này, Meo đọc giá rồi nói bạn nên quẹt thẻ nào.",
+    mood: "wave",
+    image: "/assets/mascot-greeting.png",
+  },
+  {
     target: "#search-input",
+    tab: "buy",
     title: "🔎 Start Your Smart Hunting",
-    body: "Nhập tên sản phẩm hoặc dán link từ Shopee, Lazada, Tiki vào đây để bắt đầu quét ưu đãi nhé!",
+    body: "Không có link cũng được — gõ tên món, chọn danh mục rồi bấm nút Thêm vào danh sách ở tab Giỏ hàng, Meo tính giùm.",
     mood: "wave",
     image: "/assets/mascot-greeting.png",
   },
   {
     target: "#cashback-comparison-section",
+    tab: "buy",
     title: "💳 Optimize Your Credit Cards",
     body: "Hệ thống sẽ gợi ý thẻ có phần trăm hoàn tiền cao nhất. Hãy vào tab 'Ví Thẻ' để chọn những thẻ bạn đang sở hữu nhé!",
     mood: "point",
@@ -41,6 +62,7 @@ export const DEFAULT_TOUR_STEPS: TourStep[] = [
   },
   {
     target: "#bonus-channels-guide",
+    tab: "buy",
     title: "🚀 Double or Triple Your Rewards",
     body: "Đừng quên chọn thêm các kênh tích điểm đối tác (như ShopBack, ví điện tử) để chồng thêm nhiều tầng giảm giá cùng lúc.",
     mood: "cheer",
@@ -48,8 +70,9 @@ export const DEFAULT_TOUR_STEPS: TourStep[] = [
   },
   {
     target: "#price-alert-trigger",
+    tab: "rewards",
     title: "🔔 Set Your Target Price",
-    body: "Chưa muốn mua ngay? Đặt mức giá bạn mong muốn tại đây. MeoSanSales sẽ thông báo ngay khi giá chạm sàn để bạn vào chốt đơn!",
+    body: "Chưa muốn mua ngay? Qua tab Tối đa ưu đãi, đặt mức giá bạn mong muốn. Meo canh giùm, giá chạm sàn là báo liền!",
     mood: "nod",
     image: "/assets/mascot-winking.png",
   },
@@ -65,6 +88,13 @@ type Props = {
   voiceLang?: string;
   /** Override the mascot image (defaults to /mascot.png). */
   mascotSrc?: string;
+  /**
+   * Which step to open on. Added 15 Aug 2026 so a section's Meo help button can
+   * replay just that step instead of restarting the whole tour from the top —
+   * nobody re-watches five steps to re-read one.
+   * Read when the tour STARTS; changing it mid-tour does nothing.
+   */
+  startIndex?: number;
 };
 
 const SPOTLIGHT_PAD = 8;
@@ -98,8 +128,17 @@ export default function ProductTour({
   steps = DEFAULT_TOUR_STEPS,
   onFinish,
   mascotSrc,
+  startIndex = 0,
 }: Props) {
   const [active, setActive] = useState(false);
+  // Held in a ref, not read straight from the prop, because `startTour` is
+  // called from an effect that deliberately only depends on `run`. Reading the
+  // prop there would capture whatever it was on the render that installed the
+  // effect, which is the stale value on every replay after the first.
+  const startIndexRef = useRef(startIndex);
+  useEffect(() => {
+    startIndexRef.current = startIndex;
+  }, [startIndex]);
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   // Voice is OPT-IN (muted by default). Autoplaying audio was implicated in
@@ -178,7 +217,8 @@ export default function ProductTour({
     setActive(true);
     // No autoplay "prime" listener: voice stays off until the user taps the
     // speaker button (see the muted-by-default note above).
-    void showStep(0);
+    const from = Math.min(Math.max(0, startIndexRef.current | 0), steps.length - 1);
+    void showStep(from);
   }
 
   function finish() {
@@ -250,9 +290,10 @@ export default function ProductTour({
   const overlay = rect ? (
     <div
       className="mss-overlay"
+      // Positioned via transform (not top/left) so moving the spotlight never
+      // registers as a layout shift — this element alone was scoring CLS 0.35.
       style={{
-        top: rect.top - SPOTLIGHT_PAD,
-        left: rect.left - SPOTLIGHT_PAD,
+        transform: `translate(${rect.left - SPOTLIGHT_PAD}px, ${rect.top - SPOTLIGHT_PAD}px)`,
         width: rect.width + SPOTLIGHT_PAD * 2,
         height: rect.height + SPOTLIGHT_PAD * 2,
       }}

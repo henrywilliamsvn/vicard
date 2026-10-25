@@ -3,3 +3,34 @@
 @tailwind utilities;
 
 body { @apply bg-slate-50 text-slate-800; font-family: Inter, system-ui, -apple-system, sans-serif; }
+
+/* ---------------------------------------------------------------------------
+   Meo pushing the trolley on the redirect screen (components/CartProgress).
+   Added 15 Aug 2026.
+
+   A tiny vertical bob so he reads as walking rather than sliding. The
+   horizontal travel is a CSS transition on `left` driven by the countdown —
+   this only adds the gait, so the two can never disagree about progress.
+
+   Honoured for people who ask for less motion: the trolley still advances
+   (that is information), it just stops bouncing.
+--------------------------------------------------------------------------- */
+@keyframes meo-walk-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.meo-walk {
+  animation: meo-walk-bob 0.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meo-walk {
+    animation: none;
+  }
+}

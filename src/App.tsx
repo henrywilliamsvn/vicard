@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CARDS,
   bestCardFor,
@@ -14,8 +14,11 @@ import { cardApplyLink, hasCardAffiliate, rewardLink } from "./links";
 import { useLang, t, catLabel } from "./i18n";
 import BuyFlow from "./BuyFlow";
 import MoneyInput from "./components/MoneyInput";
+import PriceTab from "./PriceTab";
+import { onReplayTourStep } from "./lib/tourBus";
 import InstallPrompt from "./components/InstallPrompt";
 import CookieConsent from "./components/CookieConsent";
+import { trackView, trackEvent, trackAction, tabFromPath } from "./lib/track";
 import ShoppingTripInterstitial from "./components/ShoppingTripInterstitial";
 import ShoppingTrips from "./components/ShoppingTrips";
 // CashOutCard (payout preview) intentionally NOT mounted yet — saved for the
@@ -54,6 +57,9 @@ const CATEGORIES: { key: SpendCategory; emoji: string }[] = [
 
 const REMINDER_LEAD_DAYS = 3;
 const KEY_CARD_PROMPT = "vicard.cardprompt.v1";
+// How many times this browser has opened the app. Visit 1 belongs to the card
+// picker; the product tour auto-offers from visit 2 (see the ordering rule below).
+const KEY_VISITS = "vicard.visits.v1";
 const KEY_OWNED = "vicard.owned.v1";
 const KEY_LOG = "vicard.log.v1";
 const KEY_PAID = "vicard.paid.v1";
@@ -139,57 +145,177 @@ export default function App() {
     [owned, log]
   );
 
-  const [tab, setTab] = useState<"buy" | "wallet" | "rewards" | "deals">("buy");
+  const [tab, setTabState] = useState<"price" | "buy" | "wallet" | "rewards" | "deals">(tabFromPath);
+  // Tab changes become SPA page views (/, /mua-gi, /wallet, /rewards, /deals)
+  // so Cloudflare Web Analytics can finally see more than "/".
+  //
+  // 15 Aug 2026: "/" is Xem giá, the new front door. Mua gì is /mua-gi.
+  const setTab = useCallback((next: "price" | "buy" | "wallet" | "rewards" | "deals") => {
+    setTabState(next);
+    trackView(next === "price" ? "/" : next === "buy" ? "/mua-gi" : "/" + next, next);
+  }, []);
 
-  // First-time product tour (Meo instructor + voice). Runs once, on the Buy tab.
+  // First-time product tour (Meo instructor + voice). Runs once.
+  //
+  // ⚠️ The tour DRIVES the tab itself (each step's `beforeStep`), so the
+  // "user walked away" guard below must compare against the tab the TOUR last
+  // asked for — not a hardcoded one. It used to hardcode "buy", which was fine
+  // while "buy" was also the landing tab. On 15 Aug 2026 the landing tab became
+  // "price", and that instantly made the guard fire on first paint: the tour
+  // switched itself off before step 1 and wrote mss_tour_done=1, so no new user
+  // would ever have seen it again. Caught before shipping; keep the ref.
   const [runTour, setRunTour] = useState(false);
+  const [tourStart, setTourStart] = useState(0);
+  // Starts at the tab the user actually landed on, i.e. "the tour has not moved
+  // anything yet". Seeding it with a literal (it was "buy") reintroduces the
+  // self-destruct: at first paint tab is "price", so tab !== ref and the guard
+  // fires before the tour has taken a single step.
+  const tourTabRef = useRef<"price" | "buy" | "wallet" | "rewards" | "deals">(tabFromPath());
   const tourSteps = useMemo(
-    () => DEFAULT_TOUR_STEPS.map((s) => ({ ...s, beforeStep: () => setTab("buy") })),
+    () =>
+      DEFAULT_TOUR_STEPS.map((s) => {
+        // Honour the step's own tab. This used to force "buy" for every step,
+        // which was fine when every target lived on that one tab. After the
+        // 15 Aug restructure the paste box is on Xem giá and the price alert is
+        // on Tối đa ưu đãi, so forcing "buy" would spotlight elements that are
+        // not mounted — an empty highlight over the wrong screen.
+        const want = s.tab ?? "buy";
+        return {
+          ...s,
+          beforeStep: async () => {
+            tourTabRef.current = want;
+            setTab(want);
+            // Let React mount the tab we just switched to, then make sure the
+            // target is actually VISIBLE.
+            //
+            // ⚠️ ProductTour's waitForElement only checks that the node EXISTS,
+            // and existence is not visibility. Measured in Chrome 141: a node
+            // inside a CLOSED <details> still reports a full-size rect (same
+            // x/y/w/h as when open) because it is laid out — it simply is not
+            // painted. So the tour would happily spotlight it and draw the
+            // tooltip over a blank strip of page, with no warning logged.
+            // Tối đa ưu đãi is all collapsible sections now and step 5 lives
+            // inside one, so this is not hypothetical.
+            await new Promise((r) => setTimeout(r, 80));
+            let node = document.querySelector(s.target)?.parentElement ?? null;
+            while (node) {
+              if (node instanceof HTMLDetailsElement) node.open = true;
+              node = node.parentElement;
+            }
+          },
+        };
+      }),
     []
   );
+  // ⚠️ The tour's auto-start effect used to live here, firing 800ms into the
+  // FIRST visit. It now sits below the card picker, because it must be able to
+  // see `showCardPicker` — and because visit 1 no longer belongs to it. See the
+  // ordering rule there.
+
+  // A section's Meo help button asks for its own step to be replayed. Matching
+  // on the target SELECTOR rather than an index means inserting a step never
+  // silently re-points these buttons at the wrong explanation.
+  useEffect(
+    () =>
+      onReplayTourStep((target) => {
+        const i = tourSteps.findIndex((s) => s.target === target);
+        if (i < 0) return;
+        setTourStart(i);
+        // Force a restart even if a tour is already open on another step.
+        setRunTour(false);
+        window.setTimeout(() => setRunTour(true), 0);
+      }),
+    [tourSteps]
+  );
+  // If the user navigates away from the tab the tour is pointing at, they've
+  // taken the wheel — dismiss the tour instead of leaving a stale spotlight
+  // glued to the old position over the new view.
   useEffect(() => {
-    if (typeof localStorage !== "undefined" && !localStorage.getItem("mss_tour_done")) {
-      const id = window.setTimeout(() => setRunTour(true), 800);
-      return () => window.clearTimeout(id);
-    }
-  }, []);
-  // If the user navigates away from the Buy tab mid-tour, they've taken the
-  // wheel — dismiss the tour instead of leaving a stale spotlight glued to the
-  // old position over the new view.
-  useEffect(() => {
-    if (tab !== "buy" && runTour) {
+    if (runTour && tab !== tourTabRef.current) {
       setRunTour(false);
       if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
     }
   }, [tab, runTour]);
 
+  // ── Visit counting (added 7 Sept 2026) ──────────────────────────────────
+  // Counted once per mount; the ref guard keeps React StrictMode's double
+  // invoke from inflating it. `app_opened` carries the number so a first visit
+  // and a return visit can finally be told apart in PostHog — until now every
+  // anonymous session looked identical.
+  const visitCountedRef = useRef(false);
+  const [visitNo, setVisitNo] = useState(0);
+  useEffect(() => {
+    if (visitCountedRef.current) return;
+    visitCountedRef.current = true;
+    if (typeof localStorage === "undefined") return;
+    const n = (parseInt(localStorage.getItem(KEY_VISITS) ?? "0", 10) || 0) + 1;
+    try {
+      localStorage.setItem(KEY_VISITS, String(n));
+    } catch {
+      /* private mode — count the visit anyway, just don't persist it */
+    }
+    setVisitNo(n);
+    trackAction("app_opened", { visit: n, returning: n > 1 });
+  }, []);
+
   // "Bạn có thẻ nào?" onboarding (UX review P1 #4 — the biggest trust lever).
   // Auto-opens once for card-less visitors, but only AFTER the product tour is
   // done so the two never stack. Any answer (save / none / dismiss) is
   // remembered and it never auto-opens again; BuyFlow can reopen it on demand.
-  const [showCardPicker, setShowCardPicker] = useState(false);
+  const [showCardPicker, setShowCardPickerState] = useState(false);
+  const setShowCardPicker = useCallback((open: boolean) => {
+    if (open) trackEvent("pick-cards");
+    setShowCardPickerState(open);
+  }, []);
+  // ⚠️ THE ORDERING RULE (7 Sept 2026) — do not re-gate this on the tour.
+  // This effect used to read `if (runTour || !localStorage.getItem("mss_tour_done")) return;`
+  // while the tour auto-started 800ms into the first visit. So the app asked
+  // "which cards do you have?" only AFTER a visitor sat through, skipped or
+  // abandoned a voice-guided tour. Anyone who bounced first was never asked —
+  // which is why August produced 19 basket advices, ALL with verdict
+  // `no-cards`, and exactly one `cards_saved` in the month. The card question
+  // is the one that makes every later answer real, so it goes first.
   useEffect(() => {
     if (typeof localStorage === "undefined") return;
     if (owned.length > 0) return;
-    if (runTour || !localStorage.getItem("mss_tour_done")) return;
+    if (runTour) return;
+    if (visitNo < 1) return; // wait until the visit has actually been counted
     if (localStorage.getItem(KEY_CARD_PROMPT)) return;
     const id = window.setTimeout(() => setShowCardPicker(true), 600);
     return () => window.clearTimeout(id);
-  }, [owned.length, runTour]);
+  }, [owned.length, runTour, visitNo]);
+
+  // The product tour, auto-offered from the SECOND visit — once someone has
+  // shown they came back. It is always reachable before that from the
+  // per-section Meo help buttons, so nothing is lost by not shouting it on
+  // arrival. It never stacks on an unanswered card question.
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    if (localStorage.getItem("mss_tour_done")) return;
+    if (visitNo < 2) return;
+    if (showCardPicker) return;
+    if (owned.length === 0 && !localStorage.getItem(KEY_CARD_PROMPT)) return;
+    const id = window.setTimeout(() => setRunTour(true), 800);
+    return () => window.clearTimeout(id);
+  }, [visitNo, showCardPicker, owned.length]);
   function cardPickerSave(ids: string[]) {
     setOwned((prev) => [
       ...prev,
       ...ids.filter((id) => !prev.some((o) => o.id === id)).map((id) => ({ id, statementDay: 1, dueDay: 15 })),
     ]);
     if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "picked");
+    trackAction("card_prompt_answered", { choice: "picked", count: ids.length, visit: visitNo });
+    trackEvent("cards-saved");
     setShowCardPicker(false);
   }
   function cardPickerNone() {
     if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "none");
+    trackAction("card_prompt_answered", { choice: "none", visit: visitNo });
     setShowCardPicker(false);
   }
   function cardPickerClose() {
     if (typeof localStorage !== "undefined") localStorage.setItem(KEY_CARD_PROMPT, "dismissed");
+    trackAction("card_prompt_answered", { choice: "dismissed", visit: visitNo });
     setShowCardPicker(false);
   }
 
@@ -416,8 +542,10 @@ export default function App() {
       <ProductTour
         run={runTour}
         steps={tourSteps}
+        startIndex={tourStart}
         onFinish={() => {
           setRunTour(false);
+          setTourStart(0);
           if (typeof localStorage !== "undefined") localStorage.setItem("mss_tour_done", "1");
         }}
       />
@@ -451,7 +579,17 @@ export default function App() {
       <ShoppingTrips lang={lang} />
       <CardOnboarding lang={lang} open={showCardPicker} onSave={cardPickerSave} onNone={cardPickerNone} onClose={cardPickerClose} />
 
-      {tab === "buy" ? (
+      {tab === "price" ? (
+        <main className="max-w-2xl mx-auto px-5 py-6">
+          <PriceTab
+            ownedStates={ownedStates}
+            lang={lang}
+            onPickCards={() => setShowCardPicker(true)}
+            // The user decides when to move on — see the note in PriceTab.
+            onContinue={() => setTab("buy")}
+          />
+        </main>
+      ) : tab === "buy" ? (
         <main className="max-w-2xl mx-auto px-5 py-6"><BuyFlow ownedStates={ownedStates} lang={lang} onAddCards={() => setTab("wallet")} onPickCards={() => setShowCardPicker(true)} /></main>
       ) : tab === "rewards" ? (
         <main className="max-w-2xl mx-auto px-5 py-6">
@@ -669,7 +807,8 @@ export default function App() {
       <nav className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-100">
         <div className="max-w-2xl mx-auto flex">
           {([
-            ["buy", "🏠", lang === "vi" ? "Mua gì?" : "Buy"],
+            ["price", "🔗", lang === "vi" ? "Xem giá" : "Price"],
+            ["buy", "🛒", lang === "vi" ? "Giỏ hàng" : "Basket"],
             ["wallet", "👛", t(lang, "tabWallet")],
             ["rewards", "🎯", t(lang, "tabRewards")],
             ["deals", "🏷️", t(lang, "tabDeals")],

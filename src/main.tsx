@@ -2,7 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "./lib/auth";
+import { initAnalytics } from "./lib/analytics";
+import { installOutboundTracking } from "./lib/track";
 import "./index.css";
+
+// Analytics: PostHog is the source of truth, Cloudflare virtual paths are the
+// zero-dependency backup. Both are wrapped in try/catch and cannot break the app.
+initAnalytics();
+installOutboundTracking();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

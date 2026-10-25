@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import CartProgress from "./CartProgress";
 import type { Lang } from "../i18n";
 import {
   createInitial,
@@ -333,9 +334,16 @@ export default function ShoppingTripInterstitial({ lang }: { lang: Lang }) {
       {sub && <p className="text-sm opacity-95 mb-5 max-w-sm">{sub}</p>}
 
       {state === "countdown" && (
-        <div className="w-64 max-w-full h-1.5 bg-white/30 rounded-full overflow-hidden mb-6">
-          <div className="h-full bg-white rounded-full transition-all duration-1000 ease-linear" style={{ width: pct + "%" }} />
-        </div>
+        <>
+          <div className="w-64 max-w-full h-1.5 bg-white/30 rounded-full overflow-hidden mb-1.5">
+            <div className="h-full bg-white rounded-full transition-all duration-1000 ease-linear" style={{ width: pct + "%" }} />
+          </div>
+          <div className="w-64 max-w-full text-right text-xs font-semibold opacity-90 mb-1 tabular-nums">
+            {pct}%
+          </div>
+          {/* Meo walks the same percentage as the bar — see CartProgress. */}
+          <CartProgress pct={pct} />
+        </>
       )}
 
       {state === "countdown" && (

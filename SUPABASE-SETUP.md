@@ -32,8 +32,8 @@ In Supabase: **Project Settings → API**. Copy two values:
 
 Then put them where the app can read them. **Two options:**
 
-**A) Netlify (recommended — needed for the live site):**
-Netlify → your site → **Site configuration → Environment variables → Add**:
+**A) Cloudflare (recommended — needed for the live site):**
+Cloudflare dashboard → the **vicard** Worker → **Settings → Variables & Secrets → Add**:
 - `VITE_SUPABASE_URL` = your Project URL
 - `VITE_SUPABASE_ANON_KEY` = your anon public key
 
@@ -43,7 +43,7 @@ Then trigger a redeploy (Deploys → Trigger deploy, or just push again).
 then `npm run dev`.
 
 > Tip: once you've created the project, paste me the Project URL + anon key and I
-> can set the Netlify environment variables for you through the Netlify connection.
+> can walk you through setting them in the Cloudflare dashboard.
 
 ---
 

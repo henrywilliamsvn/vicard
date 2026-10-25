@@ -160,7 +160,6 @@ const DICT = {
   discFlash: { en: "⚡ Flash deals", vi: "⚡ Ưu đãi chớp nhoáng" },
   discYourStores: { en: "Your stores", vi: "Cửa hàng của bạn" },
   dealOpen: { en: "Open & earn cashback →", vi: "Mở & Hoàn tiền →" },
-  dealsForYou: { en: "💸 Deals for you", vi: "💸 Deal cho bạn" },
 
   // Loyalty preview (non-live)
   loyPreview: { en: "Preview", vi: "Bản xem trước" },
@@ -193,7 +192,9 @@ const DICT = {
   rhAllLinked: { en: "🎉 All linked — you're set to stack on every purchase.", vi: "🎉 Đã kết nối hết — sẵn sàng cộng dồn cho mọi giao dịch." },
   rhStackTitle: { en: "1 · How to optimize", vi: "1 · Hướng dẫn tối ưu" },
   rhStackSub: { en: "Pick what you're buying — follow the steps in order to layer every discount.", vi: "Chọn món bạn mua — làm theo thứ tự để xếp chồng mọi ưu đãi." },
-  rhDealsTitle: { en: "3 · Deals right now", vi: "3 · Ưu đãi đang có" },
+  rhAlertTitle: { en: "3 · Tell me when it drops", vi: "3 · Báo giá khi giảm" },
+  rhAlertSub: { en: "Not buying today? Meo watches the price and tells you.", vi: "Chưa mua hôm nay? Meo canh giá rồi báo bạn." },
+  rhDealsTitle: { en: "4 · Deals right now", vi: "4 · Ưu đãi đang có" },
   rhDealsSub: { en: "A few deals worth grabbing today. Tap to open the source.", vi: "Vài ưu đãi đáng chú ý hôm nay. Chạm để mở nguồn." },
   rhDealsMoved: { en: "Looking for deals? See the latest in the Deals tab 🏷️", vi: "Tìm ưu đãi? Xem mới nhất ở tab Ưu đãi 🏷️" },
   rhLinkToggleHint: { en: "Tap to set up your reward sources", vi: "Chạm để thiết lập các nguồn ưu đãi" },

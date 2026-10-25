@@ -1,12 +1,24 @@
 // =============================================================================
 // Vietnam Credit Card Catalog  —  cards.ts
-// Comprehensive edition  ·  v0.3  ·  Expanded June 21, 2026
+// Comprehensive edition  ·  v0.6  ·  Rate-watch refresh October 1, 2026
 // =============================================================================
 //
-// v0.3 expands toward comprehensive coverage of the cashback cards Vietnamese
-// users actually carry (local + foreign banks + fintech). Confirm every rate on
-// the bank's official page; cards marked "(verify rates)" still need first-hand
-// confirmation. Citi Vietnam consumer cards migrated to UOB (July 2025).
+// v0.6 (Oct 1, 2026): TPBank EVO corrected to its official pick-one-of-4-packages
+// scheme (10% if spend >=15M else 2%, 250k/category, 500k/statement). No other
+// rate changes found; ACB, PVcomBank and BIDV Sep-Dec 2026 promos NOT folded in.
+//
+// v0.5 is the September 2026 monthly rate-watch refresh. Changes this cycle:
+// KBank Cashback Plus corrected against the official 01.2026 T&C (0.5% applies
+// only to six listed MCC groups, 0% elsewhere, capped 1,000,000/statement --
+// v0.4 wrongly showed it as uncapped 0.5% on everything), and three new
+// best-in-class cards added: Sacombank Platinum American Express (20% travel),
+// Sacombank Visa UNIQ Platinum (20% supermarket + transport) and LPBank JCB
+// Ultimate (15% health/education/insurance, which outclasses OCB JCB Platinum).
+// BIDV's three Sep-Dec 2026 cashback programmes are time-boxed, budget-capped
+// acquisition promos and are deliberately NOT folded into card rates.
+// VN bank terms change often -- confirm every rate on the bank's official page;
+// cards marked "(verify rates)" still need first-hand confirmation.
+// Citi Vietnam consumer cards migrated to UOB (July 2025).
 //
 // Rates are decimals (0.05 = 5%). Caps and fees are in VND.
 // =============================================================================
@@ -66,18 +78,18 @@ export const CARDS: CardProduct[] = [
     product: "KBank Cashback Plus",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "up to 10% selected" },
-      { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
-      { category: "dining", rate: 0.10, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.10, capVND: null, period: "statement" },
-      { category: "entertainment", rate: 0.10, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.005, capVND: null, period: "statement", note: "MCC 3000-3308/4511 air, 7512 car hire, 3501-3839/7011 hotels, 4111-4131 transit, 4722 travel agents, 7523 parking" },
+      { category: "supermarket", rate: 0.005, capVND: null, period: "statement", note: "MCC 5411 plus department stores and the whole clothing/footwear group" },
+      { category: "dining", rate: 0.005, capVND: null, period: "statement", note: "MCC 5811-5814, 5441, 5462, 5499, 5921" },
+      { category: "entertainment", rate: 0.005, capVND: null, period: "statement", note: "MCC 4899, 5815-5818, 7832, 7922-7996" },
+      { category: "online", rate: 0.005, capVND: null, period: "statement", note: "MCC 5262 marketplaces, 5732 electronics" },
+      { category: "everything", rate: 0, capVND: null, period: "statement", note: "0% outside the six listed MCC groups (was 0.3% before 06/03/2026)" },
     ],
-    totalCapVND: 300_000,
+    totalCapVND: 1_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "Auto cashback on ALL spend; up to 10% selected. Cap ~300k/statement. Fast virtual card.",
+    lastVerified: "2026-09-05",
+    notes: "DOWNGRADED. Official T&C v01.2026: from 06/03/2026 cashback is 0.5% and applies ONLY inside six MCC groups (travel, supermarket+fashion, restaurants, entertainment/subscriptions, health & beauty, e-commerce); all other MCCs earn 0%. Capped 1,000,000/statement. Thailand spend also dropped 15% -> 0.5%. Cashback posts at T+2 (two statement cycles later). Excludes 4829, 4900, 5944, 6010-6540, gambling, fines, tax. v0.4 wrongly recorded this as uncapped 0.5% on everything. No longer best-in-class -- RECOMMEND REMOVAL.",
   },
   {
     id: "shinhan-visa-cashback",
@@ -116,13 +128,14 @@ export const CARDS: CardProduct[] = [
     product: "SeABank SeALady Cashback",
     network: "Mastercard",
     rewards: [
-      { category: "everything", rate: 0.02, capVND: null, period: "statement" },
+      { category: "foreign", rate: 0.004, capVND: null, period: "statement", note: "0.4% foreign; 0.2% domestic base" },
+      { category: "everything", rate: 0.002, capVND: null, period: "statement", note: "2% only on Women's Days (Mar 8, Oct 20) & birthday" },
     ],
     totalCapVND: 12_000_000,
     totalCapPeriod: "year",
     annualFeeVND: null,
-    lastVerified: "2026-06-21",
-    notes: "Flat 2% on everything, up to ~12M/year. Simple all-rounder. (verify rates)",
+    lastVerified: "2026-07-01",
+    notes: "0.2% base (0.4% foreign); 2% only on Women's Days & cardholder birthday. Cap ~12M/year. NOT a flat-2% card.",
   },
   {
     id: "vpbank-super-shopee-platinum",
@@ -136,8 +149,8 @@ export const CARDS: CardProduct[] = [
     totalCapVND: 400_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "10% on Shopee/ShopeeFood, max ~400k/month.",
+    lastVerified: "2026-09-05",
+    notes: "10% on Shopee/ShopeeFood, max ~400k/month, and it requires total settled spend of at least 2,000,000/statement to qualify. CLOSED to new applicants (2026); existing holders keep benefits. Consider removal.",
   },
   {
     id: "vib-cash-back",
@@ -189,17 +202,16 @@ export const CARDS: CardProduct[] = [
     product: "VPBank StepUP",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "general online" },
-      { category: "dining", rate: 0.02, capVND: null, period: "statement" },
-      { category: "entertainment", rate: 0.02, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+      { category: "online", rate: 0.15, capVND: 1_500_000, period: "statement", note: "15% cap 1.5M if spend >=100M; 15% cap 700k if 10M-100M; 6% cap 300k if <10M. Excludes Shopee/ShopeeFood, online insurance, bills" },
+      { category: "dining", rate: 0.04, capVND: 200_000, period: "statement", note: "4% if spend >=10M/statement; else 2%" },
+      { category: "everything", rate: 0.001, capVND: null, period: "statement" },
     ],
-    totalCapVND: 600_000,
+    totalCapVND: 1_700_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
     feeWaiver: "First-year fee waived with 3 txns of 300k within 30 days",
-    lastVerified: "2026-06-19",
-    notes: "5% general online (not Shopee-specific). Cap ~600k/statement.",
+    lastVerified: "2026-08-01",
+    notes: "Three spend tiers: >=100M/statement -> 15% online cap 1.5M; 10M-100M -> 15% cap 700k; <10M -> 6% cap 300k. Plus dining. Headline total up to 1,700,000/statement.",
   },
   {
     id: "tpbank-evo-visa",
@@ -207,15 +219,19 @@ export const CARDS: CardProduct[] = [
     product: "TPBank EVO Visa",
     network: "Visa",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement", note: "0.5%-30% by partner" },
-      { category: "education", rate: 0.10, capVND: null, period: "statement", note: "online tuition" },
-      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 1 (transport + dining): MCC 4121 Grab/Be/XanhSM, 5812/5814 incl. ShopeeFood" },
+      { category: "supermarket", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 2 (supermarket + education): MCC 5411 at 19 named chains" },
+      { category: "education", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 2: MCC 8211/8220/8299 tuition, language centres" },
+      { category: "travel", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 3 (travel + entertainment): MCC 4722/4511/7011" },
+      { category: "entertainment", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 3: MCC 7832 cinemas only" },
+      { category: "online", rate: 0.10, capVND: 250_000, period: "statement", note: "Package 4 (e-commerce + beauty): MCC 5262/5399 Shopee/Tiki/Lazada/TikTok Shop" },
     ],
-    totalCapVND: null,
+    totalCapVND: 500_000,
+    totalCapPeriod: "statement",
     annualFeeVND: null,
     feeWaiver: "First-year fee waived with 3 txns within 90 days",
-    lastVerified: "2026-06-19",
-    notes: "Online focus; rate varies a lot by partner. Up to 10% online tuition.",
+    lastVerified: "2026-10-01",
+    notes: "CORRECTED Oct 2026. Cardholder picks ONE of 4 packages in EVO App (transport+dining, supermarket+education, travel+entertainment, e-commerce+beauty). 10% on the chosen package if total settled spend >= 15,000,000/statement, otherwise only 2%. Cap 250,000 per category and 500,000/statement. No cashback outside the chosen package. Not combinable with EVO's separate online-shopping cashback scheme. Programme runs 21/04/2025 - 20/12/2026, so re-check in December. Excludes MoMo/ZaloPay/VNPay/PayPal etc. (except whitelisted merchants), 6211, 4829/6051, 7311/5968, gambling.",
   },
   {
     id: "ocb-igen-mastercard-platinum",
@@ -286,16 +302,15 @@ export const CARDS: CardProduct[] = [
     product: "HSBC Live+",
     network: "Visa",
     rewards: [
-      { category: "dining", rate: 0.06, capVND: null, period: "statement" },
-      { category: "online", rate: 0.06, capVND: null, period: "statement" },
-      { category: "entertainment", rate: 0.06, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.08, capVND: 200_000, period: "statement", note: "8% payroll / 6% non-payroll; shares 200k cap w/ shopping" },
+      { category: "online", rate: 0.08, capVND: 200_000, period: "statement", note: "shopping & e-commerce; shares 200k cap w/ dining" },
+      { category: "entertainment", rate: 0.01, capVND: null, period: "statement", note: "unlimited; cinema, Netflix, Spotify" },
+      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
-    totalCapVND: 600_000,
-    totalCapPeriod: "statement",
+    totalCapVND: null,
     annualFeeVND: null,
-    lastVerified: "2026-06-21",
-    notes: "Lifestyle cashback — dining, shopping, entertainment. Confirm rate/cap. (verify rates)",
+    lastVerified: "2026-07-01",
+    notes: "Up to 8% dining + shopping (combined ~200k/month), 1% unlimited entertainment, 0.3% else.",
   },
   {
     id: "vcb-jcb-platinum",
@@ -382,15 +397,15 @@ export const CARDS: CardProduct[] = [
     product: "Techcombank Visa Signature",
     network: "Visa",
     rewards: [
-      { category: "dining", rate: 0.10, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.03, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.05, capVND: 5_000_000, period: "statement", note: "domestic restaurants only (VN merchant country code)" },
+      { category: "travel", rate: 0.05, capVND: 5_000_000, period: "statement", note: "domestic hotels; shares the 5M cap with dining" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
-    totalCapVND: 3_000_000,
+    totalCapVND: 5_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "Up to 10% dining + 3% travel, cap ~3M/month. Strong for diners.",
+    lastVerified: "2026-08-01",
+    notes: "Official T&C: 5% on domestic restaurants & hotels, cap 5,000,000/card account/month. Foreign spend and cash advances excluded. Cashback posts within 10 working days of the following month.",
   },
   {
     id: "techcombank-priority-visa-signature",
@@ -414,17 +429,17 @@ export const CARDS: CardProduct[] = [
     product: "Cake Freedom 2in1",
     network: "Mastercard",
     rewards: [
-      { category: "online", rate: 0.20, capVND: null, period: "statement" },
-      { category: "dining", rate: 0.20, capVND: null, period: "statement" },
-      { category: "supermarket", rate: 0.20, capVND: null, period: "statement" },
-      { category: "travel", rate: 0.20, capVND: null, period: "statement" },
+      { category: "online", rate: 0.20, capVND: 200_000, period: "statement" },
+      { category: "dining", rate: 0.20, capVND: 200_000, period: "statement" },
+      { category: "supermarket", rate: 0.20, capVND: 200_000, period: "statement", note: "MCC 5411: only the first txn per day counts" },
+      { category: "travel", rate: 0.20, capVND: 200_000, period: "statement" },
       { category: "everything", rate: 0.005, capVND: null, period: "statement" },
     ],
     totalCapVND: 1_000_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "20% across 5 categories, combined cap ~1M/month. Digital-native.",
+    lastVerified: "2026-08-01",
+    notes: "20% across 12 eligible industries (3 fixed + 2 self-chosen categories). Per-category cap 200k/statement; per-txn cap 50k (txn >=200k) or 10k (txn <200k); overall 1M/statement requires total settled spend >=5,000,000/statement.",
   },
   {
     id: "be-cake-2in1",
@@ -557,15 +572,15 @@ export const CARDS: CardProduct[] = [
     product: "Sacombank Visa Platinum Cashback",
     network: "Visa",
     rewards: [
-      { category: "online", rate: 0.05, capVND: null, period: "statement" },
-      { category: "foreign", rate: 0.03, capVND: null, period: "statement", note: "foreign POS" },
-      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.168, capVND: 680_000, period: "statement", note: "MCC 4121/4789 transport; each txn must be >=100,000 VND; shares 680k cap" },
+      { category: "supermarket", rate: 0.068, capVND: 680_000, period: "statement", note: "MCC 5411/5499 supermarket & convenience; shares 680k cap" },
+      { category: "everything", rate: 0.0039, capVND: null, period: "statement", note: "unlimited" },
     ],
-    totalCapVND: 600_000,
+    totalCapVND: 680_000,
     totalCapPeriod: "statement",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "5% online, 3% foreign POS, 0.5% other. Cap ~600k/statement.",
+    lastVerified: "2026-08-01",
+    notes: "REPRICED 2026: 16.8% transport + 6.8% supermarket/convenience (shared cap 680k/statement), 0.39% unlimited on everything else. Qualifying txns must be >=100,000 VND. Excludes fuel, bills, insurance, gold, e-wallet top-ups, financial MCCs.",
   },
   {
     id: "eximbank-visa-platinum-cashback",
@@ -618,15 +633,15 @@ export const CARDS: CardProduct[] = [
     product: "OCB JCB Platinum",
     network: "JCB",
     rewards: [
-      { category: "education", rate: 0.15, capVND: null, period: "statement" },
-      { category: "insurance", rate: 0.15, capVND: null, period: "statement" },
+      { category: "education", rate: 0.15, capVND: 300_000, period: "statement", note: "health/medical MCCs: hospitals, clinics, pharmacies" },
+      { category: "insurance", rate: 0.07, capVND: 150_000, period: "statement" },
       { category: "everything", rate: 0.003, capVND: null, period: "statement" },
     ],
     totalCapVND: 18_000_000,
     totalCapPeriod: "year",
     annualFeeVND: null,
-    lastVerified: "2026-06-19",
-    notes: "15% Education/Health/Insurance, up to ~18M/year. Great for tuition/insurance.",
+    lastVerified: "2026-08-01",
+    notes: "15% health/medical (cap 300k/period) + 7% insurance (cap 150k/period), headline up to 18M/year. Requires >=7 eligible txns per qualifying period. Insurance rate was cut from 15% to 7%.",
   },
   {
     id: "ocb-mastercard-platinum",
@@ -666,14 +681,104 @@ export const CARDS: CardProduct[] = [
     product: "VIB Super Card",
     network: "Mastercard",
     rewards: [
-      { category: "entertainment", rate: 0.15, capVND: null, period: "statement", note: "up to 15% movies/lifestyle (points)" },
-      { category: "dining", rate: 0.05, capVND: null, period: "statement" },
-      { category: "everything", rate: 0.003, capVND: null, period: "statement" },
+      { category: "dining", rate: 0.15, capVND: null, period: "statement", note: "pick 1 of dining/shopping/travel for 15%" },
+      { category: "travel", rate: 0.15, capVND: null, period: "statement", note: "if chosen as the 15% category" },
+      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "10% online or foreign" },
+      { category: "foreign", rate: 0.10, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.001, capVND: null, period: "statement" },
     ],
     totalCapVND: null,
     annualFeeVND: null,
-    lastVerified: "2026-06-21",
-    notes: "Up to 15% entertainment/lifestyle (points like cashback). Confirm list + caps. (verify rates)",
+    lastVerified: "2026-08-01",
+    notes: "CLOSED to new applicants -- VIB stopped issuing Super Card (along with 2in1 Plus and Financial) in favour of the Max Card membership model. Existing holders keep benefits: choose 1 category (dining/shopping/travel) for 15%, 10% online/foreign, 0.1% else. Cashback paid ~15 days.",
+  },
+  {
+    id: "shinhan-mylife-platinum",
+    bank: "Shinhan",
+    product: "Shinhan MyLife Platinum",
+    network: "Visa",
+    rewards: [
+      { category: "travel", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 4121 taxi/limousine" },
+      { category: "supermarket", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5411/5499/5412/5451" },
+      { category: "dining", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5812/5813/5814; bakery 5462 excluded" },
+      { category: "entertainment", rate: 0.10, capVND: 300_000, period: "statement", note: "MCC 5815/5817/5818/4899/7832; digital games 5816 excluded" },
+      { category: "everything", rate: 0.004, capVND: null, period: "statement", note: "unlimited base" },
+    ],
+    totalCapVND: 1_200_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: 1_100_000,
+    feeWaiver: "Year 2 waived with >=110,000,000 spend in the prior year",
+    lastVerified: "2026-08-01",
+    notes: "NEW 2026. 10% reward points on 4 lifestyle groups, 300k cap each (1.2M total/statement), 0.4% unlimited base. Requires >=3,000,000 total spend across the groups. FX fee 2.9%. Strongly MCC-dependent.",
+  },
+  {
+    id: "vib-max-card",
+    bank: "VIB",
+    product: "VIB Max Card",
+    network: "Mastercard",
+    rewards: [
+      { category: "online", rate: 0.10, capVND: null, period: "statement", note: "Elite tier; 8% Pro, 5% Plus, 0% Start" },
+      { category: "dining", rate: 0.10, capVND: null, period: "statement", note: "one of 5 selectable categories" },
+      { category: "supermarket", rate: 0.10, capVND: null, period: "statement" },
+      { category: "travel", rate: 0.10, capVND: null, period: "statement" },
+      { category: "entertainment", rate: 0.10, capVND: null, period: "statement" },
+      { category: "everything", rate: 0.001, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 18_000_000,
+    totalCapPeriod: "year",
+    annualFeeVND: 4_000_000,
+    feeWaiver: "Start tier is free; paid tiers are monthly subscriptions (min 1 quarter), switchable in MyVIB",
+    lastVerified: "2026-09-05",
+    notes: "VIB's membership-package card. Four tiers -- Start (free, no boost), Plus (5%), Pro (8%), Elite (10%) -- up to 10% across 5 categories, max ~18M/year (~1.5M/month at Elite). Package fee up to 333,333/month; breakeven roughly 30M (Plus), 50M (Pro), 100M (Elite) spend per statement. Only worth it for high spenders who pick the right tier.",
+  },
+  {
+    id: "sacombank-platinum-amex",
+    bank: "Sacombank",
+    product: "Sacombank Platinum American Express",
+    network: "Other",
+    rewards: [
+      { category: "travel", rate: 0.20, capVND: 1_000_000, period: "statement", note: "air tickets, hotels, travel agencies -- MCC list maintained on sacombank.com" },
+      { category: "foreign", rate: 0.10, capVND: 1_000_000, period: "statement", note: "10% at foreign POS; 5% on foreign online transactions" },
+      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 1_000_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-09-05",
+    notes: "NEW 2026. Best travel cashback in the market: 20% on flights/hotels/travel agents, 10% foreign POS, 5% foreign online, 0.5% everything else. Cap 1,000,000/statement (~12,000,000/year). Cashback credited 20th-25th of the following month, minimum payout 10,000. Excludes securities (6211), casinos, gold & jewellery (5944), bill payment (4900), and VND-denominated transactions at offshore merchants such as Amazon.",
+  },
+  {
+    id: "sacombank-visa-uniq-platinum",
+    bank: "Sacombank",
+    product: "Sacombank Visa UNIQ Platinum",
+    network: "Visa",
+    rewards: [
+      { category: "supermarket", rate: 0.20, capVND: 300_000, period: "statement", note: "MCC 5411/5499/5722/9751; 50% on the first txn within 30 days of activation; shares the 300k cap with transport" },
+      { category: "travel", rate: 0.20, capVND: 300_000, period: "statement", note: "MCC 4121/5969/4789 ride-hailing -- Grab, Be, Xanh SM, Mai Linh, Vexere; 50% on the first txn within 30 days" },
+      { category: "everything", rate: 0.005, capVND: 300_000, period: "statement" },
+    ],
+    totalCapVND: 600_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-09-05",
+    notes: "NEW 2026. Integrated debit+credit product, distinct from Sacombank Visa Platinum Cashback. 50% back on the first supermarket txn and the first transport txn within 30 days of activation, then 20% on the rest (300k/statement for that group). 0.5% on other spend, also capped 300k. Overall 600,000/statement (~7,200,000/year), minimum payout 10,000. Income requirement 15,000,000/month. Excludes bills (4900), gold (5944), securities (6211), casinos, and VND spend at offshore merchants.",
+  },
+  {
+    id: "lpbank-jcb-ultimate",
+    bank: "LPBank",
+    product: "LPBank JCB Ultimate",
+    network: "JCB",
+    rewards: [
+      { category: "education", rate: 0.15, capVND: 800_000, period: "statement", note: "Comprehensive Care package; shares the 800k cap with health and insurance" },
+      { category: "insurance", rate: 0.15, capVND: 400_000, period: "statement", note: "sub-capped at 400k inside the shared 800k" },
+      { category: "dining", rate: 0.10, capVND: 800_000, period: "statement", note: "only on the alternative Elite Experience package -- not combinable with Comprehensive Care" },
+      { category: "everything", rate: 0.005, capVND: null, period: "statement" },
+    ],
+    totalCapVND: 800_000,
+    totalCapPeriod: "statement",
+    annualFeeVND: null,
+    lastVerified: "2026-09-05",
+    notes: "NEW 2026. Best health/education/insurance card in the market -- outclasses OCB JCB Platinum (15% health capped at only 300k, 7% insurance capped at 150k). Cardholder picks ONE package at issuance and cannot switch: Comprehensive Care = 15% on insurance/health/education (max 800k/statement, insurance sub-capped 400k), or Elite Experience = 10% on dining/resorts/spa (max 800k). Statement period runs the 21st to the 20th; cashback paid within 60 days. Minimum credit limit 100,000,000. Excludes instalments, cash advances, e-wallet top-ups, transfers (4829/6051), advertising (7311), securities (6211), crypto and gambling.",
   },
   {
     id: "homecredit-home-card",

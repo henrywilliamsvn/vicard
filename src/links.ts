@@ -58,8 +58,38 @@ export const AFFILIATE: AffiliateConfig = {
   },
 
   cardApplyUrls: {
-    // TODO per-bank affiliate apply links, e.g.:
-    // "Vietcombank": "https://your-affiliate-link/vcb",
+    // AccessTrade VN card campaigns. Links generated 4 Aug 2026 with
+    // utm_source=meosansales, utm_medium=app, utm_campaign=card-apply, so the
+    // AccessTrade report separates app traffic from video traffic.
+    //
+    // Keys must match `bank` in cards.ts / BANK_APPLY_PAGES below.
+    //
+    // VIB — "VIB - THẺ TÍN DỤNG". 700.000đ, Cost Per Qualified Lead, 30-day
+    // cookie. Paid only once VIB approves a credit limit. Customer must be a
+    // Vietnamese citizen aged 20–65, no bad debt in 2 years, salary paid
+    // through a bank ≥7tr/month. Highest payout of the three.
+    VIB: "https://shorten.asia/UEDxGnEH",
+
+    // VPBank — "VPBank Thẻ Direct". 477.273đ, Cost Per Register, 30-day cookie.
+    // Two milestones: card opened (CPA1), then activated + first transaction
+    // within 90 days (CPA2).
+    // DO NOT also add "THẺ TÍN DỤNG VPBank 3T" (420.000đ, 0-day cookie) — both
+    // campaigns disqualify a customer who went through another flow first, so
+    // running the two together cancels conversions. One VPBank card only.
+    VPBank: "https://shorten.asia/9nv6d5wS",
+
+    // HDBank — "HDBank - Thẻ tín dụng". Cost Per Action, 7-day cookie.
+    // Payout is quoted two ways in AccessTrade's own UI: 320.000đ/bill on the
+    // campaign page, 291.000đ in the campaign list. Treat ~291–320k as a range.
+    // CAVEAT: the recorded flow starts with the customer installing the HDBank
+    // app and THEN following the affiliate link. This button sends them to the
+    // web page instead, so tracking is unverified — check a real conversion
+    // before relying on it. Also "one device = one customer".
+    HDBank: "https://shorten.asia/nAvwv6MF",
+
+    // Deliberately NOT mapped: "Cake (VPBank)" and "Cake (VPBank) / Be" are a
+    // separate product from VPBank's own cards — the VPBank campaign would not
+    // track a Cake application, so those keep their official-page fallback.
   },
 
   // TODO your generic card-comparison affiliate link (TheBank.vn / banker.vn /

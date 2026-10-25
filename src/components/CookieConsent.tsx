@@ -30,7 +30,9 @@ export default function CookieConsent({ lang }: { lang: Lang }) {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4">
+    // bottom-14 (not bottom-0): sits ABOVE the fixed bottom tab nav (~52px tall)
+    // instead of covering it — the "cookie banner blocks the nav" bug.
+    <div className="fixed inset-x-0 bottom-14 z-50 p-3 sm:p-4">
       <div className="max-w-2xl mx-auto bg-white border border-slate-200 shadow-lg rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <p className="text-sm text-slate-600 flex-1">
           {t(lang, "cookieText")}{" "}

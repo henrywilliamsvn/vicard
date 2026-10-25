@@ -23,8 +23,8 @@ Same stack as Commit and café-music-checker: React + Vite + TypeScript + Tailwi
 ```
 npm run build
 ```
-Then deploy the `dist/` folder to Netlify (same GitHub → Netlify pipeline as your
-other apps).
+Then push to `main` — Cloudflare rebuilds and publishes to https://meosansales.com/
+automatically. See `DEPLOY.md`.
 
 ## What's in here
 - `src/cards.ts` — the Vietnam card catalog + the `bestCardFor()` routing engine.

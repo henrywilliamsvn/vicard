@@ -7,6 +7,7 @@ import {
   type RewardSource,
 } from "../rewardSources";
 import { rewardLink, hasAnyAffiliate } from "../links";
+import PriceAlerts from "./PriceAlerts";
 import { type Lang, t, catLabel } from "../i18n";
 
 const CATEGORY_KEYS: { key: SpendCategory; emoji: string }[] = [
@@ -100,10 +101,24 @@ export default function RewardsHub({
 
   return (
     <div className="space-y-8">
-      {/* ---- Step 1: How-to-optimize guide (leads) ------------------------ */}
-      <section>
-        <h2 className="text-lg font-semibold mb-1">{t(lang, "rhStackTitle")}</h2>
-        <p className="text-sm text-slate-500 mb-3">{t(lang, "rhStackSub")}</p>
+      {/* ---- Step 1: How-to-optimize guide --------------------------------
+          Made collapsible on 15 Aug 2026, matching the "Kết nối các ưu đãi"
+          pattern directly below it. Before this the tab opened with a category
+          picker and a full step list already expanded, so the two sections
+          didn't behave the same way and the tab always opened long. Now it
+          opens compact and the user chooses what to open.
+          `open` by default: this is still step 1, so a first visit should show
+          it — the value is being able to fold it away once you know it. ---- */}
+      <details open className="group rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+        <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-base font-semibold text-slate-800">{t(lang, "rhStackTitle")}</span>
+            <span className="block text-xs text-slate-500 mt-0.5">{t(lang, "rhStackSub")}</span>
+          </span>
+          <span className="shrink-0 text-slate-400 transition-transform group-open:rotate-180">▾</span>
+        </summary>
+
+        <div className="px-4 pb-4 border-t border-slate-100 pt-4">
 
         <div className="flex flex-wrap gap-2 mb-4">
           {CATEGORY_KEYS.map((c) => (
@@ -151,7 +166,8 @@ export default function RewardsHub({
         </ol>
 
         <p className="text-xs text-slate-400 mt-4">{t(lang, "rhPromoNote")}</p>
-      </section>
+        </div>
+      </details>
 
       {/* ---- Step 2: Link your reward sources (collapsible, below guide) --- */}
       <details className="group rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
@@ -218,6 +234,25 @@ export default function RewardsHub({
           </div>
         </div>
       </details>
+
+      {/* ---- Price alerts — moved here from Mua gì on 15 Aug 2026 ---------
+          Watching a price is what you do when you are NOT buying today, so it
+          belongs with the other squeeze-more-out tools rather than in the
+          buy-now flow. Collapsed by default: it is the newest thing on this
+          tab and the least urgent. -------------------------------------- */}
+      <details className="group rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+        <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-base font-semibold text-slate-800">{t(lang, "rhAlertTitle")}</span>
+            <span className="block text-xs text-slate-500 mt-0.5">{t(lang, "rhAlertSub")}</span>
+          </span>
+          <span className="shrink-0 text-slate-400 transition-transform group-open:rotate-180">▾</span>
+        </summary>
+        <div className="px-4 pb-4 border-t border-slate-100 pt-4">
+          <PriceAlerts lang={lang} />
+        </div>
+      </details>
+
 
       {/* ---- Pointer to the Deals tab (replaces the old duplicate list) ---- */}
       <div className="text-center">

@@ -15,8 +15,24 @@
 // expected sometimes — the app then asks the user to type the amount.
 // =============================================================================
 
+// Minimal R2 typings (no @cloudflare/workers-types in this repo).
+interface R2Range { offset?: number; length?: number; suffix?: number }
+interface R2Object {
+  size: number;
+  httpEtag: string;
+  range?: R2Range;
+  writeHttpMetadata(headers: Headers): void;
+}
+interface R2ObjectBody extends R2Object { body: ReadableStream }
+interface R2Bucket {
+  get(key: string, options?: { range?: Headers; onlyIf?: Headers }): Promise<R2Object | R2ObjectBody | null>;
+}
+
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
+  // Videos/images for the Meo channels live in R2 (bucket "meo-media"), not in
+  // git and not in dist. Optional so the Worker still runs before the binding exists.
+  MEDIA?: R2Bucket;
   // Optional — set via `wrangler secret put`. When present, the affiliate path
   // is tried first (most reliable for Shopee). Absent = public best-effort only.
   SHOPEE_AFFILIATE_APP_ID?: string;
@@ -238,10 +254,81 @@ async function handlePrice(request: Request, env: Env): Promise<Response> {
   }
 }
 
+// -----------------------------------------------------------------------------
+// GET /media/<file> — served from R2 so 1 GB of mp4s never has to go through git.
+// Supports Range requests (phones and Metricool fetch video in byte ranges).
+// ⚠️ A missing file returns a REAL 404. Before this, the SPA fallback served
+// index.html for missing media, so a broken video link "loaded" as the home page.
+// During the move to R2, a file still bundled in dist/media is served from there.
+// -----------------------------------------------------------------------------
+const MEDIA_TYPES: Record<string, string> = {
+  mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm",
+  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+  mp3: "audio/mpeg", m4a: "audio/mp4", json: "application/json",
+};
+
+async function handleMedia(request: Request, env: Env, url: URL): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+  }
+  let key: string;
+  try {
+    key = decodeURIComponent(url.pathname.slice("/media/".length));
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+  if (!key || key.includes("..")) return new Response("Not found", { status: 404 });
+
+  const obj = env.MEDIA ? await env.MEDIA.get(key, { range: request.headers, onlyIf: request.headers }) : null;
+
+  if (obj === null) {
+    // Not in R2 (or no binding yet) → try the bundled copy, but never let the
+    // SPA fallback pass index.html off as a video.
+    const asset = await env.ASSETS.fetch(request);
+    const type = asset.headers.get("content-type") || "";
+    if (asset.ok && !type.includes("text/html")) return asset;
+    return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
+  }
+
+  const headers = new Headers();
+  obj.writeHttpMetadata(headers);
+  headers.set("etag", obj.httpEtag);
+  headers.set("accept-ranges", "bytes");
+  if (!headers.has("cache-control")) headers.set("cache-control", "public, max-age=86400");
+  if (!headers.has("content-type")) {
+    const ext = key.split(".").pop()?.toLowerCase() || "";
+    headers.set("content-type", MEDIA_TYPES[ext] || "application/octet-stream");
+  }
+
+  if (!("body" in obj)) {
+    // A precondition (If-None-Match / If-Match …) stopped the body.
+    return new Response(null, { status: request.headers.has("if-none-match") ? 304 : 412, headers });
+  }
+
+  const body = (obj as R2ObjectBody).body;
+  const r = obj.range;
+  if (request.headers.has("range") && r) {
+    let start: number, length: number;
+    if (r.suffix !== undefined) {
+      length = Math.min(r.suffix, obj.size);
+      start = obj.size - length;
+    } else {
+      start = r.offset ?? 0;
+      length = r.length ?? obj.size - start;
+    }
+    headers.set("content-range", `bytes ${start}-${start + length - 1}/${obj.size}`);
+    headers.set("content-length", String(length));
+    return new Response(request.method === "HEAD" ? null : body, { status: 206, headers });
+  }
+  headers.set("content-length", String(obj.size));
+  return new Response(request.method === "HEAD" ? null : body, { status: 200, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/price") return handlePrice(request, env);
+    if (url.pathname.startsWith("/media/")) return handleMedia(request, env, url);
     return env.ASSETS.fetch(request);
   },
 };

@@ -8,17 +8,21 @@
    that dims everything else. pointer-events:none so it NEVER blocks clicks. */
 .mss-overlay {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 2147483000;
   border-radius: 14px;
   box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.62);
   outline: 3px solid rgba(255, 122, 26, 0.9);
   outline-offset: 0;
   pointer-events: none;
-  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  /* Moved with transform (not top/left): transform changes are ignored by the
+     Layout Instability API, so the spotlight no longer counts toward CLS. */
+  transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
+  will-change: transform;
 }
 .mss-overlay-full {
-  top: 0;
-  left: 0;
+  transform: none;
   width: 100vw;
   height: 100vh;
   border-radius: 0;

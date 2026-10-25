@@ -1,3 +1,7 @@
 node_modules
 dist
 .env
+.wrangler
+
+# 133MB of videos/images — shipped via dist, never through git
+public/media
